@@ -4,6 +4,7 @@ import { MarketPulse } from './MarketPulse';
 import { NewsFeed } from './NewsFeed';
 import { SignalBoard } from './SignalBoard';
 import { SettingsPanel } from './SettingsPanel';
+import { PortfolioPage } from './portfolio/PortfolioPage';
 import '../styles/analysis.css';
 import '../styles/signals.css';
 
@@ -51,6 +52,15 @@ export function CenterTabs() {
         <button
           type="button"
           role="tab"
+          aria-selected={state.centerTab === 'portfolio'}
+          className={state.centerTab === 'portfolio' ? 'ct-tab is-active' : 'ct-tab'}
+          onClick={() => actions.setCenterTab('portfolio')}
+        >
+          Portfolio
+        </button>
+        <button
+          type="button"
+          role="tab"
           aria-selected={state.centerTab === 'settings'}
           className={state.centerTab === 'settings' ? 'ct-tab is-active' : 'ct-tab'}
           onClick={() => actions.setCenterTab('settings')}
@@ -64,6 +74,9 @@ export function CenterTabs() {
           {state.centerTab === 'news' && <NewsFeed />}
           {state.centerTab === 'analysis' && <AnalysisLab />}
           {state.centerTab === 'signals' && <SignalBoard />}
+          {state.centerTab === 'portfolio' && (
+            <PortfolioPage onOpenSymbol={(symbol) => actions.openChart(symbol)} />
+          )}
           {state.centerTab === 'settings' && <SettingsPanel />}
         </div>
       </div>

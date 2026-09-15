@@ -16,6 +16,7 @@ import type {
   ChartRequest,
   HistoricalSignalSnapshot,
   MarketCacheStats,
+  PortfolioWriteResult,
   EarningsEvent,
   HoldingsResult,
   LlmSettings,
@@ -39,6 +40,16 @@ import type {
   ValuationSnapshot,
   WatchlistItem,
 } from '../shared/types';
+import type {
+  PortfolioAccountType,
+  PortfolioActionContext,
+  PortfolioDocumentV3,
+  PortfolioSnapshot,
+  SymbolPortfolioContext,
+} from '../shared/portfolio';
+import type { PortfolioRiskReport } from '../shared/portfolioRisk';
+import type { PortfolioExposureReport } from '../shared/portfolioExposure';
+import type { PortfolioCsvPreview } from './services/portfolioImport';
 
 type ForecastEventChannel =
   | typeof IPC.forecastProgress
@@ -98,6 +109,46 @@ const api: QuantApi = {
     ipcRenderer.invoke(IPC.chartGetV3, request),
   getChartEvents: (query: ChartEventQuery): Promise<ChartEventRecord[]> =>
     ipcRenderer.invoke(IPC.chartEventsGet, query),
+  getPortfolio: (): Promise<PortfolioDocumentV3> => ipcRenderer.invoke(IPC.portfolioGet),
+  getPortfolioSnapshot: (): Promise<PortfolioSnapshot> =>
+    ipcRenderer.invoke(IPC.portfolioSnapshotGet),
+  getPortfolioRisk: (): Promise<PortfolioRiskReport> => ipcRenderer.invoke(IPC.portfolioRiskGet),
+  getPortfolioExposure: (): Promise<PortfolioExposureReport> =>
+    ipcRenderer.invoke(IPC.portfolioExposureGet),
+  getSymbolPortfolioContext: (
+    symbol: string,
+  ): Promise<{ context: SymbolPortfolioContext; action: PortfolioActionContext }> =>
+    ipcRenderer.invoke(IPC.portfolioSymbolContextGet, symbol),
+  addPortfolioAccount: (input: {
+    name: string;
+    type: PortfolioAccountType;
+  }): Promise<PortfolioWriteResult> => ipcRenderer.invoke(IPC.portfolioAccountAdd, input),
+  addPortfolioLot: (input: {
+    symbol: string;
+    quantity: number;
+    costPerShare: number;
+    accountId: string;
+    acquiredAt?: string | null;
+    note?: string;
+  }): Promise<PortfolioWriteResult> => ipcRenderer.invoke(IPC.portfolioLotAdd, input),
+  updatePortfolioLot: (
+    id: string,
+    patch: Partial<{
+      quantity: number;
+      costPerShare: number;
+      acquiredAt: string | null;
+      accountId: string;
+      note: string;
+    }>,
+  ): Promise<PortfolioWriteResult> => ipcRenderer.invoke(IPC.portfolioLotUpdate, id, patch),
+  removePortfolioLot: (id: string): Promise<PortfolioWriteResult> =>
+    ipcRenderer.invoke(IPC.portfolioLotRemove, id),
+  setPortfolioCash: (accountId: string, amount: number): Promise<PortfolioWriteResult> =>
+    ipcRenderer.invoke(IPC.portfolioCashSet, accountId, amount),
+  previewPortfolioCsv: (text: string): Promise<PortfolioCsvPreview> =>
+    ipcRenderer.invoke(IPC.portfolioCsvPreview, text),
+  importPortfolioCsv: (text: string, accountId: string): Promise<PortfolioWriteResult> =>
+    ipcRenderer.invoke(IPC.portfolioCsvImport, text, accountId),
   getSignalHistory: (
     symbol: string,
     from?: number,

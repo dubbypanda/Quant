@@ -36,6 +36,25 @@ import {
 } from './services/marketCache';
 import { getChartEvents, setEarningsProvider } from './services/economicEvents';
 import {
+  addPortfolioAccount,
+  addPortfolioLot,
+  addPortfolioLots,
+  consumePortfolioRecoveryWarning,
+  getPortfolioDocument,
+  PortfolioValidationError,
+  removePortfolioLot,
+  setAccountCash,
+  updatePortfolioLot,
+} from './services/portfolioStore';
+import {
+  clearPortfolioCache,
+  getPortfolioExposure,
+  getPortfolioRisk,
+  getPortfolioSnapshot,
+  getSymbolPortfolioView,
+} from './services/portfolioService';
+import { buildCsvPreview, csvPreviewToLots } from './services/portfolioImport';
+import {
   getSignalHistory,
   migrateV2SignalOutcomes,
 } from './services/signalHistoryStore';
@@ -421,6 +440,172 @@ function registerIpcHandlers(): void {
         reason: error instanceof Error ? error.message : 'Migration failed.',
       };
     }
+  });
+
+  // ---- Portfolio -----------------------------------------------------
+  //
+  // Every write re-validates here. Renderer validation is usability only: the
+  // renderer is untrusted input, so nothing below trusts a payload's shape.
+  const portfolioWrite = (
+    run: () => import('../shared/portfolio').PortfolioDocumentV3,
+  ): import('../shared/types').PortfolioWriteResult => {
+    try {
+      const document = run();
+      clearPortfolioCache();
+      return { ok: true, document };
+    } catch (error) {
+      if (error instanceof PortfolioValidationError) {
+        return { ok: false, errors: error.errors };
+      }
+      return {
+        ok: false,
+        errors: [error instanceof Error ? error.message : 'The portfolio update failed.'],
+      };
+    }
+  };
+
+  const positiveNumber = (value: unknown): number | null =>
+    typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : null;
+  const nonNegativeNumber = (value: unknown): number | null =>
+    typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : null;
+  const text = (value: unknown): string | null =>
+    typeof value === 'string' && value.trim().length ? value.trim() : null;
+
+  ipcMain.handle(IPC.portfolioGet, async () => {
+    const document = getPortfolioDocument();
+    const warning = consumePortfolioRecoveryWarning();
+    if (warning) console.warn(`[portfolio] ${warning}`);
+    return document;
+  });
+
+  ipcMain.handle(IPC.portfolioSnapshotGet, async () => getPortfolioSnapshot());
+  ipcMain.handle(IPC.portfolioRiskGet, async () => getPortfolioRisk());
+  ipcMain.handle(IPC.portfolioExposureGet, async () => getPortfolioExposure());
+
+  ipcMain.handle(IPC.portfolioSymbolContextGet, async (_e, rawSymbol: unknown) => {
+    const symbol = normalizeSymbol(rawSymbol);
+    if (!symbol) {
+      return {
+        context: {
+          owned: false,
+          quantity: 0,
+          averageCost: null,
+          marketValue: null,
+          unrealizedPnl: null,
+          weightPercent: null,
+          componentRiskPercent: null,
+          indirectExposurePercent: null,
+        },
+        action: 'not-owned',
+      };
+    }
+    return getSymbolPortfolioView(symbol);
+  });
+
+  ipcMain.handle(IPC.portfolioAccountAdd, async (_e, rawInput: unknown) => {
+    const raw = rawInput && typeof rawInput === 'object' ? (rawInput as Record<string, unknown>) : {};
+    const name = text(raw.name);
+    const type = raw.type;
+    if (!name) return { ok: false, errors: ['An account needs a name.'] };
+    if (!['taxable', 'ira', 'roth-ira', '401k', 'other'].includes(type as string)) {
+      return { ok: false, errors: ['Unknown account type.'] };
+    }
+    return portfolioWrite(() =>
+      addPortfolioAccount({
+        name,
+        type: type as import('../shared/portfolio').PortfolioAccountType,
+        currency: 'USD',
+      }),
+    );
+  });
+
+  ipcMain.handle(IPC.portfolioLotAdd, async (_e, rawInput: unknown) => {
+    const raw = rawInput && typeof rawInput === 'object' ? (rawInput as Record<string, unknown>) : {};
+    const symbol = normalizeSymbol(raw.symbol);
+    const quantity = positiveNumber(raw.quantity);
+    const costPerShare = nonNegativeNumber(raw.costPerShare);
+    const accountId = text(raw.accountId);
+    const errors: string[] = [];
+    if (!symbol) errors.push('A valid symbol is required.');
+    if (quantity === null) errors.push('Quantity must be greater than zero.');
+    if (costPerShare === null) errors.push('Cost per share must be zero or greater.');
+    if (!accountId) errors.push('An account is required.');
+    if (errors.length) return { ok: false, errors };
+    return portfolioWrite(() =>
+      addPortfolioLot({
+        symbol: symbol as string,
+        quantity: quantity as number,
+        costPerShare: costPerShare as number,
+        accountId: accountId as string,
+        acquiredAt: typeof raw.acquiredAt === 'string' ? raw.acquiredAt : null,
+        ...(text(raw.note) ? { note: text(raw.note) as string } : {}),
+      }),
+    );
+  });
+
+  ipcMain.handle(IPC.portfolioLotUpdate, async (_e, rawId: unknown, rawPatch: unknown) => {
+    const id = text(rawId);
+    if (!id) return { ok: false, errors: ['A lot id is required.'] };
+    const raw = rawPatch && typeof rawPatch === 'object' ? (rawPatch as Record<string, unknown>) : {};
+    const patch: Record<string, unknown> = {};
+    // Only known fields are copied across; a patch is never spread wholesale.
+    if (raw.quantity !== undefined) {
+      const quantity = positiveNumber(raw.quantity);
+      if (quantity === null) return { ok: false, errors: ['Quantity must be greater than zero.'] };
+      patch.quantity = quantity;
+    }
+    if (raw.costPerShare !== undefined) {
+      const costPerShare = nonNegativeNumber(raw.costPerShare);
+      if (costPerShare === null) {
+        return { ok: false, errors: ['Cost per share must be zero or greater.'] };
+      }
+      patch.costPerShare = costPerShare;
+    }
+    if (raw.acquiredAt !== undefined) {
+      patch.acquiredAt = typeof raw.acquiredAt === 'string' ? raw.acquiredAt : null;
+    }
+    if (raw.accountId !== undefined) {
+      const accountId = text(raw.accountId);
+      if (!accountId) return { ok: false, errors: ['An account is required.'] };
+      patch.accountId = accountId;
+    }
+    if (raw.note !== undefined) patch.note = typeof raw.note === 'string' ? raw.note : '';
+    return portfolioWrite(() => updatePortfolioLot(id, patch));
+  });
+
+  ipcMain.handle(IPC.portfolioLotRemove, async (_e, rawId: unknown) => {
+    const id = text(rawId);
+    if (!id) return { ok: false, errors: ['A lot id is required.'] };
+    return portfolioWrite(() => removePortfolioLot(id));
+  });
+
+  ipcMain.handle(IPC.portfolioCashSet, async (_e, rawAccountId: unknown, rawAmount: unknown) => {
+    const accountId = text(rawAccountId);
+    const amount = nonNegativeNumber(rawAmount);
+    if (!accountId) return { ok: false, errors: ['An account is required.'] };
+    if (amount === null) return { ok: false, errors: ['Cash must be zero or greater.'] };
+    return portfolioWrite(() => setAccountCash(accountId, amount));
+  });
+
+  ipcMain.handle(IPC.portfolioCsvPreview, async (_e, rawText: unknown) => {
+    const csv = typeof rawText === 'string' ? rawText : '';
+    return buildCsvPreview({ text: csv });
+  });
+
+  ipcMain.handle(IPC.portfolioCsvImport, async (_e, rawText: unknown, rawAccountId: unknown) => {
+    const csv = typeof rawText === 'string' ? rawText : '';
+    const accountId = text(rawAccountId);
+    if (!accountId) return { ok: false, errors: ['An account is required.'] };
+    const document = getPortfolioDocument();
+    if (!document.accounts.some((account) => account.id === accountId)) {
+      return { ok: false, errors: ['The selected account no longer exists.'] };
+    }
+    const preview = buildCsvPreview({ text: csv });
+    if (!preview.validRowCount) {
+      return { ok: false, errors: ['No valid rows were found in the file.'] };
+    }
+    const lots = csvPreviewToLots(preview, accountId, document);
+    return portfolioWrite(() => addPortfolioLots(lots));
   });
 
   ipcMain.handle(IPC.pivotNewsGet, async (_e, rawSymbol: unknown, rawPivots: unknown) => {

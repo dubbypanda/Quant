@@ -1,0 +1,506 @@
+/* Portfolio page. Flat and terminal-like per docs/quant-v3/03 section 10:
+   one metrics row rather than one card per metric, tabular numbers
+   everywhere, and no decorative chrome. Tokens only. */
+
+.pf-page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px 16px 24px;
+  color: var(--text-1);
+  font-family: var(--font-ui);
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.pf-page-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.pf-page-head h2 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 620;
+}
+
+.pf-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.pf-page button,
+.pf-dialog button {
+  appearance: none;
+  background: var(--surface-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-sm);
+  color: var(--text-1);
+  font: inherit;
+  font-size: 12px;
+  padding: 5px 10px;
+  min-height: 27px;
+  cursor: pointer;
+  transition: background var(--t-fast), border-color var(--t-fast);
+}
+
+.pf-page button:hover:not(:disabled),
+.pf-dialog button:hover:not(:disabled) {
+  background: var(--surface-3);
+  border-color: var(--border);
+}
+
+.pf-page button:disabled,
+.pf-dialog button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.pf-primary {
+  background: var(--accent-soft) !important;
+  border-color: transparent !important;
+  color: var(--accent-strong) !important;
+}
+
+.pf-page button:focus-visible,
+.pf-dialog button:focus-visible,
+.pf-page input:focus-visible,
+.pf-page select:focus-visible,
+.pf-page textarea:focus-visible,
+.pf-dialog input:focus-visible,
+.pf-dialog select:focus-visible,
+.pf-dialog textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* ---- Summary --------------------------------------------------------- */
+
+.pf-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.pf-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 32px;
+}
+
+.pf-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 8rem;
+}
+
+.pf-metric-label {
+  color: var(--text-3);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.pf-metric-value {
+  font-family: var(--font-mono);
+  font-size: 19px;
+  font-variant-numeric: tabular-nums;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.pf-metric-value small {
+  font-size: 11.5px;
+  color: var(--text-2);
+}
+
+.up {
+  color: var(--up);
+}
+
+.down {
+  color: var(--down);
+}
+
+/* ---- Tables ---------------------------------------------------------- */
+
+.pf-table-wrap {
+  /* The table is the one element allowed to scroll sideways. */
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.pf-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.pf-table caption {
+  text-align: left;
+}
+
+.pf-table th,
+.pf-table td {
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--border-subtle);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.pf-table thead th {
+  color: var(--text-3);
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom-color: var(--border);
+}
+
+.pf-table .num {
+  text-align: right;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.pf-table td small {
+  display: block;
+  color: var(--text-3);
+  font-size: 10.5px;
+}
+
+.pf-table tbody tr:hover {
+  background: var(--surface-1);
+}
+
+.pf-table-compact th,
+.pf-table-compact td {
+  padding: 3px 7px;
+}
+
+.pf-row-invalid {
+  color: var(--down);
+}
+
+.pf-symbol {
+  appearance: none;
+  background: transparent !important;
+  border: 0 !important;
+  padding: 0 !important;
+  min-height: 0 !important;
+  color: var(--accent-strong) !important;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pf-asset-type {
+  margin-left: 6px;
+  color: var(--text-3);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 400;
+}
+
+.pf-unpriced {
+  margin-left: 6px;
+  padding: 1px 5px;
+  border-radius: var(--r-sm);
+  background: var(--warn-soft);
+  color: var(--warn);
+  font-size: 10px;
+  font-weight: 400;
+}
+
+/* ---- Panels ---------------------------------------------------------- */
+
+.pf-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.pf-panel h3,
+.pf-positions h3,
+.pf-first-run h3 {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.pf-panel h4 {
+  margin: 12px 0 5px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.pf-rows {
+  margin: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 3px 12px;
+  font-size: 12px;
+}
+
+.pf-row {
+  display: contents;
+}
+
+.pf-rows dt {
+  color: var(--text-3);
+}
+
+.pf-rows dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.pf-bars {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.pf-bars li {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1fr) 4rem;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+}
+
+.pf-bar-label {
+  color: var(--text-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pf-bar-track {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.pf-bar-fill {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+}
+
+.pf-bar-value {
+  text-align: right;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-2);
+}
+
+/* ---- Messages -------------------------------------------------------- */
+
+.pf-warning,
+.pf-warnings {
+  margin: 4px 0 0;
+  color: var(--warn);
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+.pf-warnings {
+  padding-left: 16px;
+}
+
+.pf-errors {
+  margin: 0 0 8px;
+  padding-left: 16px;
+  color: var(--down);
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+.pf-note,
+.pf-preview-counts,
+.pf-mapping {
+  margin: 4px 0 0;
+  color: var(--text-3);
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+.pf-mapping {
+  padding-left: 16px;
+}
+
+.pf-empty {
+  margin: 0;
+  color: var(--text-3);
+  font-size: 12px;
+}
+
+.pf-first-run {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 18px 0;
+}
+
+.pf-first-run p {
+  margin: 0;
+  color: var(--text-2);
+  font-size: 12.5px;
+  max-width: 52ch;
+  line-height: 1.55;
+}
+
+/* ---- Forms ----------------------------------------------------------- */
+
+.pf-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px 10px;
+  margin-bottom: 10px;
+}
+
+.pf-form h4 {
+  width: 100%;
+  margin: 0;
+}
+
+.pf-form label,
+.pf-dialog label {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+.pf-form input,
+.pf-form select,
+.pf-dialog input,
+.pf-dialog select,
+.pf-dialog textarea {
+  background: var(--surface-1);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-sm);
+  color: var(--text-1);
+  font: inherit;
+  font-size: 12px;
+  padding: 4px 7px;
+  min-height: 27px;
+  min-width: 7rem;
+}
+
+.pf-dialog textarea {
+  min-width: 100%;
+  font-family: var(--font-mono);
+  resize: vertical;
+}
+
+.pf-lots {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+}
+
+.pf-lots li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 3px 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.pf-lot-text {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-2);
+}
+
+/* ---- Import dialog --------------------------------------------------- */
+
+.pf-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  display: grid;
+  place-items: center;
+  background: rgba(2, 5, 12, 0.6);
+  padding: 20px;
+}
+
+.pf-dialog-body {
+  width: min(760px, 100%);
+  max-height: 88vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-modal);
+}
+
+.pf-dialog-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.pf-dialog-head h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 620;
+}
+
+.pf-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 10px;
+}
+
+.pf-inspector {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pf-page button,
+  .pf-dialog button {
+    transition: none;
+  }
+}

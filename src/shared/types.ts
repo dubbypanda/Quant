@@ -544,6 +544,13 @@ export type AddWatchlistResult =
   | { ok: false; error: string };
 
 /** The API exposed on window.quant by src/main/preload.ts. */
+/** Every portfolio write returns either the new document or the validation
+ *  errors the main process raised. Renderer validation is usability only; the
+ *  main process is the authority. */
+export type PortfolioWriteResult =
+  | { ok: true; document: import('./portfolio').PortfolioDocumentV3 }
+  | { ok: false; errors: string[] };
+
 export interface QuantApi {
   forecast: import('./forecast').ForecastApi;
   getWatchlist(): Promise<WatchlistItem[]>;
@@ -576,6 +583,42 @@ export interface QuantApi {
   scanSignals(request?: SignalScanRequest): Promise<SignalScanResult>;
   getSignalDesk(symbol: string): Promise<import('./signalV2').SignalDeskResult>;
   getChartEvents(query: ChartEventQuery): Promise<ChartEventRecord[]>;
+  getPortfolio(): Promise<import('./portfolio').PortfolioDocumentV3>;
+  getPortfolioSnapshot(): Promise<import('./portfolio').PortfolioSnapshot>;
+  getPortfolioRisk(): Promise<import('./portfolioRisk').PortfolioRiskReport>;
+  getPortfolioExposure(): Promise<import('./portfolioExposure').PortfolioExposureReport>;
+  getSymbolPortfolioContext(symbol: string): Promise<{
+    context: import('./portfolio').SymbolPortfolioContext;
+    action: import('./portfolio').PortfolioActionContext;
+  }>;
+  addPortfolioAccount(input: {
+    name: string;
+    type: import('./portfolio').PortfolioAccountType;
+  }): Promise<PortfolioWriteResult>;
+  addPortfolioLot(input: {
+    symbol: string;
+    quantity: number;
+    costPerShare: number;
+    accountId: string;
+    acquiredAt?: string | null;
+    note?: string;
+  }): Promise<PortfolioWriteResult>;
+  updatePortfolioLot(
+    id: string,
+    patch: Partial<{
+      quantity: number;
+      costPerShare: number;
+      acquiredAt: string | null;
+      accountId: string;
+      note: string;
+    }>,
+  ): Promise<PortfolioWriteResult>;
+  removePortfolioLot(id: string): Promise<PortfolioWriteResult>;
+  setPortfolioCash(accountId: string, amount: number): Promise<PortfolioWriteResult>;
+  previewPortfolioCsv(
+    text: string,
+  ): Promise<import('../main/services/portfolioImport').PortfolioCsvPreview>;
+  importPortfolioCsv(text: string, accountId: string): Promise<PortfolioWriteResult>;
   /** Read-only. History writes stay main-process internal so a renderer cannot
    *  forge a historical signal record. */
   getSignalHistory(
