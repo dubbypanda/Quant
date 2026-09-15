@@ -7,6 +7,7 @@ import { SettingsPanel } from './SettingsPanel';
 import { PortfolioPage } from './portfolio/PortfolioPage';
 import { DiscoverPage } from './discovery/DiscoverPage';
 import { TodayPage } from './discovery/TodayPage';
+import { ResearchLabPage } from './lab/ResearchLabPage';
 import '../styles/analysis.css';
 import '../styles/signals.css';
 
@@ -81,6 +82,15 @@ export function CenterTabs() {
         <button
           type="button"
           role="tab"
+          aria-selected={state.centerTab === 'lab'}
+          className={state.centerTab === 'lab' ? 'ct-tab is-active' : 'ct-tab'}
+          onClick={() => actions.setCenterTab('lab')}
+        >
+          Lab
+        </button>
+        <button
+          type="button"
+          role="tab"
           aria-selected={state.centerTab === 'settings'}
           className={state.centerTab === 'settings' ? 'ct-tab is-active' : 'ct-tab'}
           onClick={() => actions.setCenterTab('settings')}
@@ -103,6 +113,7 @@ export function CenterTabs() {
           {state.centerTab === 'portfolio' && (
             <PortfolioPage onOpenSymbol={(symbol) => actions.openChart(symbol)} />
           )}
+          {state.centerTab === 'lab' && <ResearchLabPage />}
           {state.centerTab === 'settings' && <SettingsPanel />}
         </div>
       </div>

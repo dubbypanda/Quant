@@ -556,6 +556,21 @@ export type DiscoveryRunResponse =
   | { status: 'running'; id: string; startedAt: string }
   | { status: 'failed'; message: string };
 
+export interface QrmProgressEvent {
+  symbol: string;
+  jobId: string;
+  completed: number;
+  total: number;
+}
+
+export type QrmRunResponse = {
+  status: 'ready' | 'unavailable';
+  snapshot: import('./qrm').QrmForecastSnapshot | null;
+  reason?: string;
+  warnings: string[];
+  view: import('./qrm').ResearchModelView | null;
+};
+
 export interface QuantApi {
   forecast: import('./forecast').ForecastApi;
   getWatchlist(): Promise<WatchlistItem[]>;
@@ -633,6 +648,17 @@ export interface QuantApi {
     import('./discovery').DiscoveryEligibilitySettings
   >): Promise<DiscoveryRunResponse>;
   getLatestDiscovery(): Promise<import('./discovery').DiscoveryRunResult | null>;
+  /** Experimental research model. Heavy compute, explicitly requested only. */
+  runQrm(request: {
+    symbol: string;
+    mode: 'discovery' | 'research' | 'lab';
+  }): Promise<QrmRunResponse>;
+  listQrmSnapshots(symbol: string): Promise<string[]>;
+  getQrmSnapshot(
+    symbol: string,
+    snapshotId: string,
+  ): Promise<import('./qrm').QrmForecastSnapshot | null>;
+  onQrmProgress(callback: (progress: QrmProgressEvent) => void): () => void;
   /** Read-only. History writes stay main-process internal so a renderer cannot
    *  forge a historical signal record. */
   getSignalHistory(

@@ -19,3 +19,7 @@ __pycache__/
 release/
 sidecars/
 build/quant-forecast-worker/
+
+# QRM research output. Large market research datasets and experiment ledgers
+# stay outside git; repository tests use small synthetic fixtures.
+research-output/

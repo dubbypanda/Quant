@@ -1,0 +1,219 @@
+/* QRM Research Lab. Tokens only, flat surfaces, tabular numerics. */
+
+.lab-page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px 16px 24px;
+  color: var(--text-1);
+  font-family: var(--font-ui);
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.lab-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.lab-head h2 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 620;
+}
+
+.lab-subtitle {
+  margin: 2px 0 0;
+  color: var(--warn);
+  font-size: 11.5px;
+  max-width: 62ch;
+  line-height: 1.5;
+}
+
+.lab-actions {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.lab-actions label {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 10.5px;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.lab-page input,
+.lab-page select {
+  background: var(--surface-1);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-sm);
+  color: var(--text-1);
+  font: inherit;
+  font-size: 12px;
+  padding: 4px 7px;
+  min-height: 27px;
+  min-width: 8rem;
+}
+
+.lab-page input {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+}
+
+.lab-page button {
+  appearance: none;
+  background: var(--surface-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-sm);
+  color: var(--text-1);
+  font: inherit;
+  font-size: 12px;
+  padding: 5px 12px;
+  min-height: 27px;
+  cursor: pointer;
+}
+
+.lab-primary {
+  background: var(--accent-soft) !important;
+  border-color: transparent !important;
+  color: var(--accent-strong) !important;
+}
+
+.lab-page button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.lab-page button:focus-visible,
+.lab-page input:focus-visible,
+.lab-page select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.lab-page h3 {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.lab-note {
+  margin: 0 0 8px;
+  color: var(--text-3);
+  font-size: 11.5px;
+  line-height: 1.5;
+  max-width: 78ch;
+}
+
+.lab-note code {
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.lab-progress {
+  margin: 0;
+  color: var(--accent-strong);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+}
+
+.lab-reason {
+  margin: 0;
+  color: var(--warn);
+  font-size: 12px;
+}
+
+.lab-warnings {
+  margin: 0;
+  padding-left: 16px;
+  color: var(--warn);
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+.lab-table-wrap {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.lab-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.lab-table th,
+.lab-table td {
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--border-subtle);
+  text-align: left;
+  vertical-align: top;
+  white-space: nowrap;
+}
+
+.lab-table thead th {
+  color: var(--text-3);
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom-color: var(--border);
+}
+
+.lab-table .num {
+  text-align: right;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.lab-decision {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-1);
+}
+
+.lab-refusals {
+  margin: 3px 0 0;
+  padding-left: 14px;
+  color: var(--text-3);
+  font-size: 10.5px;
+  line-height: 1.45;
+  white-space: normal;
+  max-width: 34ch;
+}
+
+.lab-rows {
+  margin: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 14em) minmax(0, 1fr);
+  gap: 3px 14px;
+  font-size: 12px;
+  max-width: 44em;
+}
+
+.lab-row {
+  display: contents;
+}
+
+.lab-rows dt {
+  color: var(--text-3);
+}
+
+.lab-rows dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}

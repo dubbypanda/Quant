@@ -17,6 +17,8 @@ import type {
   HistoricalSignalSnapshot,
   DiscoveryRunResponse,
   MarketCacheStats,
+  QrmProgressEvent,
+  QrmRunResponse,
   PortfolioWriteResult,
   EarningsEvent,
   HoldingsResult,
@@ -56,6 +58,7 @@ import type {
   DiscoveryRunResult,
   UniverseHydrationStatus,
 } from '../shared/discovery';
+import type { QrmForecastSnapshot } from '../shared/qrm';
 
 type ForecastEventChannel =
   | typeof IPC.forecastProgress
@@ -166,6 +169,19 @@ const api: QuantApi = {
   ): Promise<DiscoveryRunResponse> => ipcRenderer.invoke(IPC.discoveryRun, settings),
   getLatestDiscovery: (): Promise<DiscoveryRunResult | null> =>
     ipcRenderer.invoke(IPC.discoveryLatest),
+  runQrm: (request: {
+    symbol: string;
+    mode: 'discovery' | 'research' | 'lab';
+  }): Promise<QrmRunResponse> => ipcRenderer.invoke(IPC.qrmRun, request),
+  listQrmSnapshots: (symbol: string): Promise<string[]> =>
+    ipcRenderer.invoke(IPC.qrmListSnapshots, symbol),
+  getQrmSnapshot: (symbol: string, snapshotId: string): Promise<QrmForecastSnapshot | null> =>
+    ipcRenderer.invoke(IPC.qrmGetSnapshot, symbol, snapshotId),
+  onQrmProgress: (callback: (progress: QrmProgressEvent) => void): (() => void) => {
+    const listener = (_event: unknown, progress: QrmProgressEvent) => callback(progress);
+    ipcRenderer.on(IPC.qrmProgress, listener);
+    return () => ipcRenderer.removeListener(IPC.qrmProgress, listener);
+  },
   getSignalHistory: (
     symbol: string,
     from?: number,

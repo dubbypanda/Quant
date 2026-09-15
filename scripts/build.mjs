@@ -3,6 +3,7 @@
 //
 //   dist/main/main.js        <- src/main/main.ts       (node, cjs, electron external)
 //   dist/main/preload.js     <- src/main/preload.ts    (node, cjs, electron external)
+//   dist/main/qrmWorker.js   <- src/main/workers/qrmWorker.ts (node worker_threads)
 //   dist/main/data/*         <- src/main/data/*        (bundled JSON datasets)
 //   dist/renderer/renderer.js/.css <- src/renderer/index.tsx
 //   dist/renderer/index.html <- src/renderer/index.html
@@ -32,6 +33,22 @@ await build({
   target: 'node20',
   external: ['electron'],
   outfile: r('dist/main/main.js'),
+  sourcemap: 'inline',
+  logLevel: 'warning',
+});
+
+// QRM runs in a worker thread, so it needs its own CJS bundle beside the main
+// bundle. The service falls back to inline computation when this file is
+// missing, so a packaging gap degrades performance rather than removing the
+// feature.
+await build({
+  entryPoints: [r('src/main/workers/qrmWorker.ts')],
+  bundle: true,
+  platform: 'node',
+  format: 'cjs',
+  target: 'node20',
+  external: ['electron'],
+  outfile: r('dist/main/qrmWorker.js'),
   sourcemap: 'inline',
   logLevel: 'warning',
 });

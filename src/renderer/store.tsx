@@ -27,6 +27,7 @@ export interface AppState {
     | 'signals'
     | 'discover'
     | 'portfolio'
+    | 'lab'
     | 'settings';
   pinnedSymbols: string[];
   modalSymbol: string | null;
@@ -213,6 +214,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       tab === 'portfolio' ||
       tab === 'today' ||
       tab === 'discover' ||
+      tab === 'lab' ||
       tab === 'settings'
     ) {
       dispatch({ type: 'centerTab', value: tab });

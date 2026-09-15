@@ -27,6 +27,8 @@
     "test:portfolio-v3": "node scripts/test-portfolio-v3.mjs",
     "test:portfolio-risk-v3": "node scripts/test-portfolio-risk-v3.mjs",
     "test:discovery-v3": "node scripts/test-discovery-v3.mjs",
+    "test:qrm-v3": "node scripts/test-qrm-v3.mjs",
+    "research:qrm": "node scripts/qrm-research-loop.mjs",
     "test:forecast:smoke": "node scripts/test-forecast-fast-ui.mjs",
     "test:forecast:harness": "node scripts/test-forecast-harness.mjs",
     "check:forecast": "node scripts/check-forecast-release.mjs",

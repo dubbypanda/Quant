@@ -67,6 +67,14 @@ import {
 import { pruneDiscoveryHistory } from './services/discoveryHistoryStore';
 import { DEFAULT_ELIGIBILITY_SETTINGS } from '../shared/discovery';
 import {
+  listQrmSnapshots,
+  pruneQrmForecasts,
+  readQrmSnapshot,
+  runQrm,
+  setQrmWorkerScript,
+  shutdownQrmPool,
+} from './services/qrmService';
+import {
   getSignalHistory,
   migrateV2SignalOutcomes,
 } from './services/signalHistoryStore';
@@ -687,6 +695,55 @@ function registerIpcHandlers(): void {
 
   ipcMain.handle(IPC.discoveryLatest, async () => getLatestDiscoveryRun());
 
+  // ---- QRM (experimental research model) ------------------------------
+  //
+  // Only ever invoked explicitly. Nothing in the chart's normal load path
+  // reaches this, per the heavy-compute constraint in docs/quant-v3/05.
+  ipcMain.handle(IPC.qrmRun, async (event, rawRequest: unknown) => {
+    const raw = rawRequest && typeof rawRequest === 'object'
+      ? (rawRequest as Record<string, unknown>)
+      : {};
+    const symbol = normalizeSymbol(raw.symbol);
+    if (!symbol) {
+      return {
+        status: 'unavailable',
+        snapshot: null,
+        reason: 'A valid symbol is required.',
+        warnings: [],
+        view: null,
+      };
+    }
+    const mode =
+      raw.mode === 'lab' || raw.mode === 'discovery' || raw.mode === 'research'
+        ? raw.mode
+        : 'research';
+    try {
+      return await runQrm({ symbol, mode }, (progress) => {
+        if (!event.sender.isDestroyed()) event.sender.send(IPC.qrmProgress, progress);
+      });
+    } catch (error) {
+      return {
+        status: 'unavailable',
+        snapshot: null,
+        reason: error instanceof Error ? error.message : 'The QRM run failed.',
+        warnings: [],
+        view: null,
+      };
+    }
+  });
+
+  ipcMain.handle(IPC.qrmListSnapshots, async (_e, rawSymbol: unknown) => {
+    const symbol = normalizeSymbol(rawSymbol);
+    return symbol ? listQrmSnapshots(symbol) : [];
+  });
+
+  ipcMain.handle(IPC.qrmGetSnapshot, async (_e, rawSymbol: unknown, rawId: unknown) => {
+    const symbol = normalizeSymbol(rawSymbol);
+    const snapshotId = typeof rawId === 'string' ? rawId : '';
+    if (!symbol || !snapshotId) return null;
+    return readQrmSnapshot(symbol, snapshotId);
+  });
+
   ipcMain.handle(IPC.pivotNewsGet, async (_e, rawSymbol: unknown, rawPivots: unknown) => {
     const pivots = cleanPivots(rawPivots);
     const symbol = normalizeSymbol(rawSymbol);
@@ -1094,6 +1151,12 @@ if (!gotLock) {
       console.warn('[signal-history] migration skipped:', error);
     }
 
+    // The worker bundle sits beside the main bundle. When it is missing the
+    // service computes inline rather than failing, so a packaging gap degrades
+    // performance instead of removing the feature.
+    const qrmWorkerPath = path.join(__dirname, 'qrmWorker.js');
+    setQrmWorkerScript(fs.existsSync(qrmWorkerPath) ? qrmWorkerPath : null);
+
     // Universe hydration is a background walk that must not delay startup, so
     // it begins well after first paint and can be stopped from the UI.
     setTimeout(() => {
@@ -1104,6 +1167,11 @@ if (!gotLock) {
         pruneDiscoveryHistory();
       } catch (error) {
         console.warn('[discovery] history prune skipped:', error);
+      }
+      try {
+        pruneQrmForecasts();
+      } catch (error) {
+        console.warn('[qrm] forecast prune skipped:', error);
       }
     }, 15_000);
 
@@ -1125,6 +1193,7 @@ if (!gotLock) {
   });
 
   app.on('window-all-closed', () => {
+    void shutdownQrmPool();
     app.quit();
   });
 }
