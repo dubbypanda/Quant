@@ -20,6 +20,7 @@ import {
   getForwardSummary,
   recordCurrentSignalIfNeeded,
 } from './signalOutcomeStore';
+import { appendSignalSnapshot } from './signalHistoryStore';
 
 interface CacheEntry {
   key: string;
@@ -119,6 +120,20 @@ export function buildSignalDesk(
   // Record candidate and update forward evaluator
   recordCurrentSignalIfNeeded(evaluation, candles);
   evaluatePendingForwardSignals(symbol, candles);
+
+  // Append an immutable history snapshot for the chart marker layer. This runs
+  // for every decision, not only candidates, so an `All decisions` view has
+  // something to show — and it is a no-op when this bar was already recorded,
+  // which is what keeps an old marker showing the old model's conclusion.
+  try {
+    appendSignalSnapshot({
+      evaluation,
+      dataCutoffTime: lastCandle?.time ?? 0,
+      observedAt: asOf,
+    });
+  } catch {
+    // History is an enhancement to the chart, never a reason the desk fails.
+  }
   const forward = getForwardSummary(symbol, evaluation.setupType, evaluation.direction);
 
   // Resolved after the expectancy downgrade above, so the conclusion the user

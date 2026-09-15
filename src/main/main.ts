@@ -11,6 +11,7 @@ import { IPC } from '../shared/ipc';
 import { FORECAST_V1 } from '../shared/forecast';
 import type {
   AddWatchlistResult,
+  ChartEventKind,
   ChartRange,
   HoldingsResult,
   LlmSettingsInput,
@@ -33,6 +34,11 @@ import {
   pruneMarketCache,
   pruneMarketCacheIfDue,
 } from './services/marketCache';
+import { getChartEvents, setEarningsProvider } from './services/economicEvents';
+import {
+  getSignalHistory,
+  migrateV2SignalOutcomes,
+} from './services/signalHistoryStore';
 import { getEarnings } from './services/earnings';
 import { getForecastHistory } from './services/forecastData';
 import {
@@ -369,6 +375,51 @@ function registerIpcHandlers(): void {
       return getMarketCacheStats();
     } catch {
       return { entries: 0, compressedBytes: 0 };
+    }
+  });
+
+  ipcMain.handle(IPC.chartEventsGet, async (_e, rawQuery: unknown) => {
+    const raw = rawQuery && typeof rawQuery === 'object' ? (rawQuery as Record<string, unknown>) : {};
+    const symbol = normalizeSymbol(raw.symbol) ?? '';
+    const from = typeof raw.from === 'string' ? raw.from : '';
+    const to = typeof raw.to === 'string' ? raw.to : '';
+    if (!from || !to) return [];
+    const kinds = Array.isArray(raw.kinds)
+      ? (raw.kinds.filter((kind) => typeof kind === 'string') as ChartEventKind[])
+      : undefined;
+    try {
+      return await getChartEvents({ symbol, from, to, kinds });
+    } catch {
+      // An empty calendar is a usable chart; a rejected promise is not.
+      return [];
+    }
+  });
+
+  ipcMain.handle(
+    IPC.signalHistoryGet,
+    async (_e, rawSymbol: unknown, rawFrom: unknown, rawTo: unknown) => {
+      const symbol = normalizeSymbol(rawSymbol);
+      if (!symbol) return [];
+      const from = typeof rawFrom === 'number' && Number.isFinite(rawFrom) ? rawFrom : undefined;
+      const to = typeof rawTo === 'number' && Number.isFinite(rawTo) ? rawTo : undefined;
+      try {
+        return getSignalHistory(symbol, from, to);
+      } catch {
+        return [];
+      }
+    },
+  );
+
+  ipcMain.handle(IPC.signalHistoryMigrate, async () => {
+    try {
+      return migrateV2SignalOutcomes();
+    } catch (error) {
+      return {
+        ran: false,
+        imported: 0,
+        skipped: 0,
+        reason: error instanceof Error ? error.message : 'Migration failed.',
+      };
     }
   });
 
@@ -758,6 +809,26 @@ if (!gotLock) {
     }
     registerIpcHandlers();
     createWindow();
+
+    // Chart events read earnings through the existing service rather than a
+    // second source of truth for the same fact.
+    setEarningsProvider(async (symbol) => {
+      try {
+        return await getEarnings([symbol]);
+      } catch {
+        return [];
+      }
+    });
+
+    // Signal history import runs once, guarded by its own marker.
+    try {
+      const migration = migrateV2SignalOutcomes();
+      if (migration.ran && migration.imported > 0) {
+        console.log(`[signal-history] imported ${migration.imported} v2 records`);
+      }
+    } catch (error) {
+      console.warn('[signal-history] migration skipped:', error);
+    }
 
     // Cache pruning runs once after ready and at most once per 24 hours after
     // that, always on the main thread. Deferred past window creation so a large

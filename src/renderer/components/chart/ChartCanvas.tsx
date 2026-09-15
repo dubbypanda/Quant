@@ -115,6 +115,13 @@ interface ChartCanvasProps {
   forecastActual: ForecastActualPoint[];
   showForecastOverlay: boolean;
   showForecastMa20: boolean;
+  /** Additional markers from the v3 annotation layers (events, signal
+   *  history). Merged with the pivot markers because lightweight-charts has a
+   *  single `setMarkers` slot per series, so one caller has to own the merge. */
+  extraMarkers?: SeriesMarker<Time>[];
+  /** Reports the visible time range so the annotation layers can filter to the
+   *  viewport before building markers. */
+  onVisibleRangeChange?: (range: { from: number; to: number } | null) => void;
   onNeedMoreHistory?: () => void;
 }
 
@@ -135,6 +142,8 @@ export const ChartCanvas = forwardRef<ChartCanvasHandle, ChartCanvasProps>(
       forecastActual,
       showForecastOverlay,
       showForecastMa20,
+      extraMarkers,
+      onVisibleRangeChange,
       onNeedMoreHistory,
     },
     ref,
@@ -607,11 +616,28 @@ export const ChartCanvas = forwardRef<ChartCanvasHandle, ChartCanvasProps>(
         size: highlight === i ? 2 : 1,
         id: `pivot-${i}`,
       }));
-      // setMarkers requires ascending time; pivots already are, but keep the
-      // guarantee explicit against future callers.
+      if (extraMarkers?.length) markers.push(...extraMarkers);
+      // setMarkers requires ascending time; pivots already are, but the merged
+      // layers are not, so the sort is load-bearing rather than defensive.
       markers.sort((a, b) => (a.time as number) - (b.time as number));
       candleSeries.setMarkers(markers);
-    }, [pivots, numbered, highlight]);
+    }, [pivots, numbered, highlight, extraMarkers]);
+
+    // ---- Visible range reporting for the v3 annotation layers ----
+    useEffect(() => {
+      const chart = chartRef.current;
+      if (!chart || !onVisibleRangeChange) return;
+      const timeScale = chart.timeScale();
+      const report = () => {
+        const range = timeScale.getVisibleRange();
+        onVisibleRangeChange(
+          range ? { from: Number(range.from), to: Number(range.to) } : null,
+        );
+      };
+      report();
+      timeScale.subscribeVisibleTimeRangeChange(report);
+      return () => timeScale.unsubscribeVisibleTimeRangeChange(report);
+    }, [onVisibleRangeChange, data]);
 
     useImperativeHandle(
       ref,

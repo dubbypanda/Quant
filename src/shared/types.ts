@@ -4,7 +4,7 @@
 // updates to src/main/preload.ts, the IPC handlers in src/main, and
 // every renderer caller.
 
-import type { SetupType, TradeDecision } from './quant';
+import type { SetupType, TradeDecision, TradeDirection } from './quant';
 
 export type InstrumentType = 'etf' | 'stock';
 
@@ -217,6 +217,118 @@ export interface SignalScanResult {
   rows: SignalScanRow[];
   summary: SignalScanSummary;
   source: DataSource;
+}
+
+// ---------------------------------------------------------------------------
+// Chart events (docs/quant-v3/02 sections 5-8)
+// ---------------------------------------------------------------------------
+
+export type ChartEventKind =
+  | 'fomc'
+  | 'fed-press-conference'
+  | 'fed-minutes'
+  | 'fed-speech'
+  | 'cpi'
+  | 'ppi'
+  | 'pce'
+  | 'payrolls'
+  | 'unemployment'
+  | 'jolts'
+  | 'jobless-claims'
+  | 'gdp'
+  | 'retail-sales'
+  | 'ism'
+  | 'treasury-auction'
+  | 'earnings'
+  | 'dividend'
+  | 'split'
+  | 'custom';
+
+export interface ChartEventValue {
+  label: string;
+  actual: string | null;
+  expected: string | null;
+  previous: string | null;
+}
+
+/**
+ * What the tape did around an event. Deliberately named `reaction`, not
+ * `impact`: none of these numbers establish causation, and the UI copy is held
+ * to the same standard.
+ */
+export interface ChartEventReaction {
+  assetReturnPercent: number | null;
+  benchmarkReturnPercent: number | null;
+  /** asset − benchmark, so a market-wide move does not read as symbol news. */
+  residualReturnPercent: number | null;
+  /** Residual expressed in units of the symbol's own baseline volatility. */
+  normalizedShock: number | null;
+  reactionWindow: ChartEventReactionWindow;
+}
+
+export type ChartEventReactionWindow = '30m' | '1h' | 'session' | 'next-session';
+
+export interface ChartEventRecord {
+  id: string;
+  kind: ChartEventKind;
+  title: string;
+  /** When the event was scheduled. Never silently replaced by `occurredAt` —
+   *  both matter for event studies, because a release that slipped is itself
+   *  information. */
+  scheduledAt: string;
+  occurredAt: string | null;
+  sourceName: string;
+  sourceUrl?: string;
+  values: ChartEventValue[];
+  reaction?: ChartEventReaction;
+  provenance: DataSource;
+}
+
+export interface ChartEventQuery {
+  symbol: string;
+  /** ISO date, inclusive. */
+  from: string;
+  /** ISO date, inclusive. */
+  to: string;
+  kinds?: ChartEventKind[];
+}
+
+// ---------------------------------------------------------------------------
+// Immutable signal history (docs/quant-v3/02 section 9)
+// ---------------------------------------------------------------------------
+
+/**
+ * A signal exactly as it was emitted, never recomputed.
+ *
+ * The whole point of this record is that a marker drawn on a 2024 bar shows
+ * what the model said in 2024. Re-deriving it from today's engine and
+ * presenting it as history is the failure this contract exists to prevent,
+ * which is why `dataCutoffTime` and the version fields are mandatory.
+ */
+export interface HistoricalSignalSnapshot {
+  id: string;
+  symbol: string;
+  signalBarTime: number;
+  observedAt: string;
+  modelName: string;
+  strategyVersion: string;
+  decision: TradeDecision;
+  setupType: SetupType;
+  direction: TradeDirection;
+  setupQuality: number;
+  entry: number | null;
+  stop: number | null;
+  target1: number | null;
+  target2: number | null;
+  noTradeReasons: string[];
+  /** Latest bar the model could see. Anything after this was not known. */
+  dataCutoffTime: number;
+  source: 'forward-observed' | 'imported-v2';
+  outcome?: {
+    status: 'open' | 'target' | 'stop' | 'timeout' | 'invalidated';
+    netR: number | null;
+    resolvedAt: string | null;
+  };
 }
 
 /** A significant local high or low detected in the candle series. */
@@ -463,5 +575,13 @@ export interface QuantApi {
   getValuation(symbol: string): Promise<ValuationSnapshot>;
   scanSignals(request?: SignalScanRequest): Promise<SignalScanResult>;
   getSignalDesk(symbol: string): Promise<import('./signalV2').SignalDeskResult>;
+  getChartEvents(query: ChartEventQuery): Promise<ChartEventRecord[]>;
+  /** Read-only. History writes stay main-process internal so a renderer cannot
+   *  forge a historical signal record. */
+  getSignalHistory(
+    symbol: string,
+    from?: number,
+    to?: number,
+  ): Promise<HistoricalSignalSnapshot[]>;
   openExternal(url: string): Promise<void>;
 }

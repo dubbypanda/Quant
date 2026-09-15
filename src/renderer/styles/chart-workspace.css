@@ -1,0 +1,536 @@
+/* Quant 3.0 chart workspace.
+
+   Section 12's layout rules, made concrete: flat surfaces with no nested
+   cards, the chart taking visual priority, price typography dominating the
+   header, and compact text/segmented controls instead of oversized buttons.
+   Every colour comes from tokens.css — no raw hex here. */
+
+.cv3-workspace {
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  gap: 10px;
+  height: 100%;
+  min-height: 0;
+  color: var(--text-1);
+  font-family: var(--font-ui);
+}
+
+/* ---- Header ---------------------------------------------------------- */
+
+.cv3-symbol-header {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  /* No card: a border under the header is enough separation. */
+  padding: 0 2px 10px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.cv3-identity {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+
+.cv3-symbol {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+}
+
+.cv3-company {
+  margin: 0;
+  color: var(--text-2);
+  font-size: 12.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 34ch;
+}
+
+.cv3-quote {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+}
+
+.cv3-quote-primary {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+/* Price dominates the header, per section 12. */
+.cv3-price {
+  font-family: var(--font-mono);
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+}
+
+.cv3-change {
+  font-family: var(--font-mono);
+  font-size: 13.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-2);
+}
+
+.cv3-change.up {
+  color: var(--up);
+}
+
+.cv3-change.down {
+  color: var(--down);
+}
+
+/* The secondary line is visibly subordinate, so two prices never read as one
+   combined figure. */
+.cv3-quote-secondary {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--text-2);
+}
+
+.cv3-session-tag {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 10.5px;
+  color: var(--text-3);
+}
+
+.cv3-secondary-price {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-1);
+}
+
+.cv3-as-of,
+.cv3-header-meta {
+  color: var(--text-3);
+  font-size: 11.5px;
+}
+
+.cv3-header-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-left: auto;
+}
+
+.cv3-session-state {
+  color: var(--text-2);
+}
+
+.cv3-stale,
+.cv3-sample {
+  padding: 2px 7px;
+  border-radius: var(--r-sm);
+  background: var(--warn-soft);
+  color: var(--warn);
+  font-size: 11px;
+}
+
+/* ---- Toolbar --------------------------------------------------------- */
+
+.cv3-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  padding: 0 2px;
+}
+
+.cv3-segment {
+  display: inline-flex;
+  background: var(--surface-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+}
+
+.cv3-segment-item {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--text-2);
+  font: inherit;
+  font-size: 11.5px;
+  letter-spacing: 0.04em;
+  /* Comfortable target without an oversized button. */
+  padding: 5px 10px;
+  min-height: 26px;
+  cursor: pointer;
+  transition: background var(--t-fast), color var(--t-fast);
+}
+
+.cv3-segment-item:hover {
+  color: var(--text-1);
+  background: var(--surface-3);
+}
+
+.cv3-segment-item.is-active {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.cv3-toolbar-group {
+  display: inline-flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.cv3-toggle {
+  appearance: none;
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-sm);
+  color: var(--text-2);
+  font: inherit;
+  font-size: 11.5px;
+  padding: 4px 9px;
+  min-height: 26px;
+  cursor: pointer;
+  transition: background var(--t-fast), color var(--t-fast), border-color var(--t-fast);
+}
+
+.cv3-toggle:hover {
+  color: var(--text-1);
+  border-color: var(--border);
+}
+
+.cv3-toggle.is-on {
+  background: var(--accent-soft);
+  border-color: transparent;
+  color: var(--accent-strong);
+}
+
+/* Focus is never removed; colour alone does not carry state. */
+.cv3-segment-item:focus-visible,
+.cv3-toggle:focus-visible,
+.cv3-tab:focus-visible,
+.cv3-collapse:focus-visible,
+.cv3-event-item:focus-visible,
+.cv3-marker-chip:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* ---- Body ------------------------------------------------------------ */
+
+.cv3-body {
+  display: grid;
+  /* The chart takes priority; the inspector is a fixed, collapsible column. */
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 12px;
+  min-height: 0;
+}
+
+.cv3-body:has(.cv3-inspector.is-collapsed) {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.cv3-stage {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  background: var(--surface-1);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+
+.cv3-stage-empty {
+  display: grid;
+  place-items: center;
+  color: var(--text-2);
+  font-size: 13px;
+  min-height: 240px;
+}
+
+.cv3-session-legend {
+  position: absolute;
+  top: 8px;
+  left: 10px;
+  z-index: 2;
+  display: flex;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 10.5px;
+  color: var(--text-3);
+  pointer-events: none;
+}
+
+.cv3-session-legend li::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 4px;
+  border-radius: 2px;
+  vertical-align: baseline;
+}
+
+.cv3-legend-pre::before {
+  background: rgba(84, 198, 235, 0.45);
+}
+
+.cv3-legend-post::before {
+  background: rgba(168, 117, 255, 0.45);
+}
+
+/* Keyboard-reachable equivalents for the in-canvas markers. */
+.cv3-marker-index {
+  position: absolute;
+  bottom: 8px;
+  left: 10px;
+  right: 10px;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cv3-marker-chip {
+  appearance: none;
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-2);
+  border-radius: var(--r-sm);
+  color: var(--text-2);
+  font: inherit;
+  font-size: 10.5px;
+  line-height: 1;
+  padding: 3px 6px;
+  min-width: 22px;
+  min-height: 22px;
+  cursor: pointer;
+}
+
+.cv3-tone-bullish {
+  color: var(--up);
+}
+
+.cv3-tone-bearish {
+  color: var(--down);
+}
+
+.cv3-tone-invalidated {
+  color: var(--text-3);
+}
+
+/* ---- Inspector ------------------------------------------------------- */
+
+.cv3-inspector {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--surface-1);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+
+.cv3-inspector.is-collapsed {
+  width: auto;
+}
+
+.cv3-inspector-head {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.cv3-tabs {
+  display: flex;
+  gap: 2px;
+  flex-wrap: wrap;
+}
+
+.cv3-inspector.is-collapsed .cv3-tabs {
+  display: none;
+}
+
+.cv3-tab {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  border-radius: var(--r-sm);
+  color: var(--text-2);
+  font: inherit;
+  font-size: 11.5px;
+  padding: 4px 8px;
+  min-height: 24px;
+  cursor: pointer;
+}
+
+.cv3-tab.is-active {
+  background: var(--surface-3);
+  color: var(--text-1);
+}
+
+.cv3-collapse {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--text-3);
+  font: inherit;
+  font-size: 11px;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cv3-inspector-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 10px;
+  font-size: 12.5px;
+}
+
+.cv3-detail-rows {
+  margin: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 8em) minmax(0, 1fr);
+  gap: 3px 10px;
+  font-size: 12px;
+}
+
+.cv3-detail-row {
+  display: contents;
+}
+
+.cv3-detail-rows dt {
+  color: var(--text-3);
+}
+
+.cv3-detail-rows dd {
+  margin: 0;
+  color: var(--text-1);
+  font-variant-numeric: tabular-nums;
+}
+
+.cv3-event-list {
+  margin: 0 0 10px;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cv3-event-item {
+  appearance: none;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  border-radius: var(--r-sm);
+  color: var(--text-1);
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  padding: 5px 7px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1px 8px;
+  cursor: pointer;
+}
+
+.cv3-event-item:hover {
+  background: var(--surface-2);
+}
+
+.cv3-event-item.is-selected {
+  background: var(--accent-soft);
+}
+
+.cv3-event-kind {
+  color: var(--text-3);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  grid-column: 1 / -1;
+}
+
+.cv3-event-date {
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+}
+
+.cv3-sample-tag {
+  grid-column: 1 / -1;
+  color: var(--warn);
+  font-size: 10.5px;
+}
+
+.cv3-event-detail,
+.cv3-reaction {
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 8px;
+  margin-top: 8px;
+}
+
+.cv3-reaction h4,
+.cv3-signal-tab h4 {
+  margin: 0 0 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-2);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.cv3-caption {
+  margin: 8px 0 0;
+  color: var(--text-3);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.cv3-empty {
+  margin: 0;
+  color: var(--text-3);
+  font-size: 12px;
+}
+
+.cv3-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Narrow windows stack the inspector under the chart rather than squeezing
+   both into unusable columns. */
+@media (max-width: 1000px) {
+  .cv3-body {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(240px, 1fr) auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cv3-segment-item,
+  .cv3-toggle {
+    transition: none;
+  }
+}

@@ -11,7 +11,10 @@ import type {
   AddWatchlistResult,
   ChartData,
   ChartRange,
+  ChartEventQuery,
+  ChartEventRecord,
   ChartRequest,
+  HistoricalSignalSnapshot,
   MarketCacheStats,
   EarningsEvent,
   HoldingsResult,
@@ -93,6 +96,14 @@ const api: QuantApi = {
     ipcRenderer.invoke(IPC.chartGet, symbol, range),
   getChartV3: (request: ChartRequest): Promise<ChartData> =>
     ipcRenderer.invoke(IPC.chartGetV3, request),
+  getChartEvents: (query: ChartEventQuery): Promise<ChartEventRecord[]> =>
+    ipcRenderer.invoke(IPC.chartEventsGet, query),
+  getSignalHistory: (
+    symbol: string,
+    from?: number,
+    to?: number,
+  ): Promise<HistoricalSignalSnapshot[]> =>
+    ipcRenderer.invoke(IPC.signalHistoryGet, symbol, from, to),
   prefetchChartV3: (symbol: string, range: ChartRange): Promise<void> =>
     ipcRenderer.invoke(IPC.chartPrefetchV3, symbol, range),
   getMarketCacheStats: (): Promise<MarketCacheStats> =>
