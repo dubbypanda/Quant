@@ -2,6 +2,7 @@
 // a browser UA. quoteSummary (v10) requires a cookie + crumb pair, which may
 // fail at any time — callers must degrade gracefully when it throws.
 
+import type { ExtendedHoursQuote } from '../../shared/types';
 import { BROWSER_UA, fetchJson, HttpError } from './http';
 
 // ---------------------------------------------------------------------------
@@ -16,11 +17,18 @@ export interface YahooChartMeta {
   chartPreviousClose?: number | null;
   previousClose?: number | null;
   marketState?: string | null;
+  preMarketPrice?: number | null;
+  preMarketChange?: number | null;
+  preMarketChangePercent?: number | null;
+  preMarketTime?: number | null;
+  postMarketPrice?: number | null;
+  postMarketChange?: number | null;
+  postMarketChangePercent?: number | null;
+  postMarketTime?: number | null;
   currentTradingPeriod?: {
-    regular?: {
-      start?: number | null;
-      end?: number | null;
-    };
+    pre?: { start?: number | null; end?: number | null };
+    regular?: { start?: number | null; end?: number | null };
+    post?: { start?: number | null; end?: number | null };
   };
 }
 
@@ -145,15 +153,24 @@ export function rawNumber(value: YahooRawValue): number | null {
 // Chart + search (no auth)
 // ---------------------------------------------------------------------------
 
+/**
+ * Fetches a chart series.
+ *
+ * `includeExtendedHours` is translated to this provider's `includePrePost`
+ * query flag here and nowhere else: callers upstream must not know which
+ * provider-specific field carries the concept.
+ */
 export async function fetchYahooChart(
   symbol: string,
   yahooRange: string,
   interval: string,
   ttlMs: number,
+  includeExtendedHours = false,
 ): Promise<YahooChartResult> {
   const url =
     `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}` +
-    `?range=${encodeURIComponent(yahooRange)}&interval=${encodeURIComponent(interval)}&includePrePost=false`;
+    `?range=${encodeURIComponent(yahooRange)}&interval=${encodeURIComponent(interval)}` +
+    `&includePrePost=${includeExtendedHours ? 'true' : 'false'}`;
   const json = await fetchJson<YahooChartResponse>(url, { ttlMs });
   const result = json.chart?.result?.[0];
   if (!result || !result.meta) {
@@ -161,6 +178,32 @@ export async function fetchYahooChart(
     throw new Error(`Yahoo chart failed for ${symbol}: ${desc}`);
   }
   return result;
+}
+
+function finite(value: number | null | undefined): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+/**
+ * Normalizes this provider's extended-hours quote fields into the shared
+ * shape. Returns null when the provider sent no price for that window —
+ * extended-hours values are never derived from the regular session.
+ */
+export function extendedHoursQuoteFrom(
+  meta: YahooChartMeta,
+  window: 'pre' | 'post',
+): ExtendedHoursQuote | null {
+  const price = finite(window === 'pre' ? meta.preMarketPrice : meta.postMarketPrice);
+  if (price === null) return null;
+  const time = finite(window === 'pre' ? meta.preMarketTime : meta.postMarketTime);
+  return {
+    price,
+    change: finite(window === 'pre' ? meta.preMarketChange : meta.postMarketChange),
+    changePercent: finite(
+      window === 'pre' ? meta.preMarketChangePercent : meta.postMarketChangePercent,
+    ),
+    updatedAt: time === null ? null : new Date(time * 1000).toISOString(),
+  };
 }
 
 export async function searchYahoo(query: string): Promise<YahooSearchQuote[]> {

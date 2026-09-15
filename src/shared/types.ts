@@ -78,6 +78,9 @@ export interface EarningsEvent {
 export type ChartRange = '1d' | '1w' | '1m' | '3m' | '6m' | '1y' | '5y' | 'max';
 export const CHART_RANGES: ChartRange[] = ['1d', '1w', '1m', '3m', '6m', '1y', '5y', 'max'];
 
+/** Which trading session a bar belongs to, in exchange local time. */
+export type MarketSession = 'pre' | 'regular' | 'post' | 'closed' | 'unknown';
+
 export interface Candle {
   time: number; // unix seconds, UTC
   open: number;
@@ -85,6 +88,29 @@ export interface Candle {
   low: number;
   close: number;
   volume: number;
+  /** Optional only for backward compatibility with 2.x sample fixtures. All
+   *  live intraday 3.0 payloads populate it. */
+  session?: MarketSession;
+}
+
+/** Provenance of a persistent-cache hit, so the UI can say what it is looking
+ *  at. `stale: true` means the payload was served past its TTL because the
+ *  network could not be reached — never because it was convenient. */
+export interface ChartCacheMeta {
+  cacheKey: string;
+  fetchedAt: string;
+  expiresAt: string;
+  stale: boolean;
+  persistent: boolean;
+}
+
+/** Extended-hours quote metadata. Missing upstream values are null; they are
+ *  never fabricated from the regular session. */
+export interface ExtendedHoursQuote {
+  price: number | null;
+  change: number | null;
+  changePercent: number | null;
+  updatedAt: string | null;
 }
 
 export interface ChartData {
@@ -94,9 +120,28 @@ export interface ChartData {
   candles: Candle[]; // ascending by time, no null closes
   currency: string;
   exchangeName?: string;
+  exchangeTimezone?: string;
   regularMarketPrice?: number | null;
   previousClose?: number | null;
+  preMarket?: ExtendedHoursQuote | null;
+  postMarket?: ExtendedHoursQuote | null;
+  marketState?: string;
   source: DataSource;
+  cache?: ChartCacheMeta;
+}
+
+/** How a caller wants a chart resolved. Defaults are
+ *  `includeExtendedHours: true` and `refresh: 'cache-first'`. */
+export interface ChartRequest {
+  symbol: string;
+  range: ChartRange;
+  includeExtendedHours?: boolean;
+  refresh?: 'cache-first' | 'network-first' | 'force-network';
+}
+
+export interface MarketCacheStats {
+  entries: number;
+  compressedBytes: number;
 }
 
 export type SignalKind =
@@ -398,7 +443,13 @@ export interface QuantApi {
   getHoldings(etfSymbol: string): Promise<HoldingsResult>;
   getNews(symbols: string[], limitPerSymbol?: number): Promise<NewsItem[]>;
   getEarnings(symbols: string[]): Promise<EarningsEvent[]>;
+  /** @deprecated 2.x channel kept as a compatibility delegate. New renderer
+   *  code calls `getChartV3`. */
   getChart(symbol: string, range: ChartRange): Promise<ChartData>;
+  getChartV3(request: ChartRequest): Promise<ChartData>;
+  prefetchChartV3(symbol: string, range: ChartRange): Promise<void>;
+  getMarketCacheStats(): Promise<MarketCacheStats>;
+  pruneMarketCache(maxBytes?: number): Promise<MarketCacheStats>;
   getPivotNews(symbol: string, pivots: PivotPoint[]): Promise<PivotNewsResult[]>;
   getMacroOverlay(key: MacroOverlayKey, range: ChartRange): Promise<MacroOverlaySeries>;
   captureChartSnapshot(symbol: string): Promise<{ dataUrl: string; capturedAt: string } | null>;

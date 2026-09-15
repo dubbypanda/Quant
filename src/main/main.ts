@@ -22,6 +22,17 @@ import type {
 } from '../shared/types';
 import { CHART_RANGES } from '../shared/types';
 import { getChart } from './services/chart';
+import {
+  getChartV3,
+  normalizeChartRequest,
+  prefetchChartV3,
+} from './services/chartRepository';
+import {
+  DEFAULT_MARKET_CACHE_BUDGET_BYTES,
+  getMarketCacheStats,
+  pruneMarketCache,
+  pruneMarketCacheIfDue,
+} from './services/marketCache';
 import { getEarnings } from './services/earnings';
 import { getForecastHistory } from './services/forecastData';
 import {
@@ -304,6 +315,60 @@ function registerIpcHandlers(): void {
       return await getChart(symbol, range);
     } catch {
       return sampleChart(symbol, range);
+    }
+  });
+
+  ipcMain.handle(IPC.chartGetV3, async (_e, rawRequest: unknown) => {
+    // The renderer is untrusted input: symbol, range and the enum fields are
+    // all re-derived here rather than spread from the payload.
+    const raw = rawRequest && typeof rawRequest === 'object' ? (rawRequest as Record<string, unknown>) : {};
+    const symbol = normalizeSymbol(raw.symbol) ?? 'SPY';
+    const range = cleanRange(raw.range);
+    const refresh =
+      raw.refresh === 'network-first' || raw.refresh === 'force-network'
+        ? raw.refresh
+        : 'cache-first';
+    const request = normalizeChartRequest({
+      symbol,
+      range,
+      includeExtendedHours: raw.includeExtendedHours !== false,
+      refresh,
+    });
+    try {
+      return await getChartV3(request);
+    } catch {
+      return sampleChart(request.symbol, request.range);
+    }
+  });
+
+  ipcMain.handle(IPC.chartPrefetchV3, async (_e, rawSymbol: unknown, rawRange: unknown) => {
+    const symbol = normalizeSymbol(rawSymbol);
+    if (!symbol) return;
+    await prefetchChartV3(symbol, cleanRange(rawRange));
+  });
+
+  ipcMain.handle(IPC.marketCacheStats, async () => {
+    try {
+      return getMarketCacheStats();
+    } catch {
+      return { entries: 0, compressedBytes: 0 };
+    }
+  });
+
+  ipcMain.handle(IPC.marketCachePrune, async (_e, rawMaxBytes: unknown) => {
+    const maxBytes =
+      typeof rawMaxBytes === 'number' && Number.isFinite(rawMaxBytes) && rawMaxBytes > 0
+        ? rawMaxBytes
+        : DEFAULT_MARKET_CACHE_BUDGET_BYTES;
+    try {
+      pruneMarketCache(maxBytes);
+    } catch {
+      /* a failed prune is reported through the returned stats, not by throwing */
+    }
+    try {
+      return getMarketCacheStats();
+    } catch {
+      return { entries: 0, compressedBytes: 0 };
     }
   });
 
@@ -693,6 +758,18 @@ if (!gotLock) {
     }
     registerIpcHandlers();
     createWindow();
+
+    // Cache pruning runs once after ready and at most once per 24 hours after
+    // that, always on the main thread. Deferred past window creation so a large
+    // sweep cannot delay first paint, and fully guarded: a corrupt cache
+    // directory must never keep the app from starting.
+    setTimeout(() => {
+      try {
+        pruneMarketCacheIfDue();
+      } catch (error) {
+        console.warn('[market-cache] prune skipped:', error);
+      }
+    }, 5_000);
 
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow();

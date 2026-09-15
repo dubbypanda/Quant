@@ -11,6 +11,8 @@ import type {
   AddWatchlistResult,
   ChartData,
   ChartRange,
+  ChartRequest,
+  MarketCacheStats,
   EarningsEvent,
   HoldingsResult,
   LlmSettings,
@@ -89,6 +91,14 @@ const api: QuantApi = {
     ipcRenderer.invoke(IPC.earningsGet, symbols),
   getChart: (symbol: string, range: ChartRange): Promise<ChartData> =>
     ipcRenderer.invoke(IPC.chartGet, symbol, range),
+  getChartV3: (request: ChartRequest): Promise<ChartData> =>
+    ipcRenderer.invoke(IPC.chartGetV3, request),
+  prefetchChartV3: (symbol: string, range: ChartRange): Promise<void> =>
+    ipcRenderer.invoke(IPC.chartPrefetchV3, symbol, range),
+  getMarketCacheStats: (): Promise<MarketCacheStats> =>
+    ipcRenderer.invoke(IPC.marketCacheStats),
+  pruneMarketCache: (maxBytes?: number): Promise<MarketCacheStats> =>
+    ipcRenderer.invoke(IPC.marketCachePrune, maxBytes),
   getPivotNews: (symbol: string, pivots: PivotPoint[]): Promise<PivotNewsResult[]> =>
     ipcRenderer.invoke(IPC.pivotNewsGet, symbol, pivots),
   getMacroOverlay: (key: MacroOverlayKey, range: ChartRange): Promise<MacroOverlaySeries> =>

@@ -1,13 +1,28 @@
-// Chart data loader for the modal: fetches candles for the active range,
-// caches per range for the modal's lifetime (toggling back is instant), and
-// exposes a monotonic `generation` counter. The generation bumps on every
-// load (range switch or retry); any async consumer — most importantly the
-// pivot-news pipeline — must throw away results that belong to an older
-// generation so switching ranges mid-flight never shows stale data.
+// Chart data loader for the modal.
+//
+// As of 3.0 this is an **L1 cache only** — a per-modal memory map that makes
+// toggling back to a visited range instant. Durable state lives in the main
+// process (`marketCache.ts` / `chartRepository.ts`):
+//
+//   L1 renderer memory  → miss →  L2 main-process persistent cache  → stale/miss → network
+//
+// The consequence for this file is that an L1 miss no longer implies network
+// I/O, so it must not be treated as expensive. Prefetch is a request to the
+// main process rather than a fetch into React state, and refresh cadence
+// follows the reported market state instead of running all night.
+//
+// `generation` is a monotonic counter that bumps on every load (range switch or
+// retry). Any async consumer — most importantly the pivot-news pipeline — must
+// discard results belonging to an older generation, so switching ranges
+// mid-flight never shows stale data.
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ChartData, ChartRange } from '../../../shared/types';
+import { isActiveMarketState } from '../../../shared/marketSession';
 import { api } from '../../api';
+
+const ACTIVE_REFRESH_MS = 10_000;
+const CLOSED_REFRESH_MS = 60_000;
 
 export interface ChartDataState {
   data: ChartData | null;
@@ -52,7 +67,7 @@ export function useChartData(
     }));
     let cancelled = false;
     api
-      .getChart(symbol, range)
+      .getChartV3({ symbol, range, includeExtendedHours: true, refresh: 'cache-first' })
       .then((data) => {
         if (cancelled || gen !== genRef.current) return; // stale response
         cacheRef.current.set(range, data);
@@ -76,42 +91,50 @@ export function useChartData(
     };
   }, [symbol, range, attempt]);
 
+  // Warm the next longer range in the main-process cache. This no longer
+  // populates L1: the payload would be a duplicate of what L2 already holds,
+  // and keeping every visited range resident in the renderer is what made the
+  // 2.x cache grow without bound.
   useEffect(() => {
     if (range === 'max') return;
     const next = nextLongerRange(range);
     if (cacheRef.current.has(next)) return;
-    let cancelled = false;
     const id = window.setTimeout(() => {
-      api.getChart(symbol, next).then(
-        (data) => {
-          if (!cancelled) cacheRef.current.set(next, data);
-        },
-        () => undefined,
-      );
+      void api.prefetchChartV3(symbol, next).catch(() => undefined);
     }, 700);
-    return () => {
-      cancelled = true;
-      window.clearTimeout(id);
-    };
+    return () => window.clearTimeout(id);
   }, [symbol, range, state.generation]);
 
+  // Refresh only while bars can still arrive. `marketState` comes from the
+  // provider via the repository; PREPRE and POSTPOST are dead zones and
+  // `isActiveMarketState` excludes them, which is what stops the 2.x behaviour
+  // of polling every 15 seconds overnight.
+  const marketState = state.data?.marketState;
   useEffect(() => {
     if (range !== '1d' && range !== '1w' && range !== '1m') return;
+    const intervalMs = isActiveMarketState(marketState) ? ACTIVE_REFRESH_MS : CLOSED_REFRESH_MS;
     const id = window.setInterval(() => {
-      api.getChart(symbol, range).then(
-        (fresh) => {
-          cacheRef.current.set(range, fresh);
-          setState((s) =>
-            s.data && s.data.range === range
-              ? { data: mergeChartData(s.data, fresh), loading: false, error: null, generation: s.generation + 1 }
-              : s,
-          );
-        },
-        () => undefined,
-      );
-    }, 15_000);
+      api
+        .getChartV3({ symbol, range, includeExtendedHours: true, refresh: 'network-first' })
+        .then(
+          (fresh) => {
+            cacheRef.current.set(range, fresh);
+            setState((s) =>
+              s.data && s.data.range === range
+                ? {
+                    data: mergeChartData(s.data, fresh),
+                    loading: false,
+                    error: null,
+                    generation: s.generation + 1,
+                  }
+                : s,
+            );
+          },
+          () => undefined,
+        );
+    }, intervalMs);
     return () => window.clearInterval(id);
-  }, [symbol, range]);
+  }, [symbol, range, marketState]);
 
   const retry = useCallback(() => setAttempt((a) => a + 1), []);
 
@@ -122,7 +145,14 @@ export function useChartData(
       const longer = nextLongerRange(historyRangeRef.current);
       if (longer === historyRangeRef.current) return;
       const cached = cacheRef.current.get(longer);
-      const older = cached ?? (await api.getChart(symbol, longer));
+      const older =
+        cached ??
+        (await api.getChartV3({
+          symbol,
+          range: longer,
+          includeExtendedHours: true,
+          refresh: 'cache-first',
+        }));
       cacheRef.current.set(longer, older);
       setState((s) => {
         if (!s.data) return s;
