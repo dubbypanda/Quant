@@ -444,8 +444,25 @@ Quant/
       signalReasonPrioritizer.ts   The at most two reasons a card may show
       unifiedSignalResolver.ts     Gate-based conclusion and strength
       qrm.ts                  QRM-3 research contracts (experimental)
+      qrmState.ts             Point-in-time QRM state estimation
+      qrmAnalogue.ts          Analogue records, distance, ESS-targeted kernel
+      qrmBootstrap.ts         Stationary block bootstrap path simulator
+      qrmForecast.ts          QRM forecast assembler
       qrmDecision.ts          QRM-3 experimental decision functional and entry quality
+      qrmBenchmark.ts         Walk-forward harness, baselines, promotion gates
       kronosDistribution.ts   Kronos ensemble to QRM distribution adapter and model views
+      marketSession.ts        Pure pre/regular/post session classifier
+      sessionQuote.ts         Session-aware price header formatter
+      eventReaction.ts        Benchmark-relative, non-causal event reaction
+      portfolio.ts            Portfolio contracts and document validation
+      portfolioAggregation.ts Lots plus prices to positions and snapshot
+      portfolioRisk.ts        Volatility, beta, drawdown, empirical VaR/CVaR
+      portfolioExposure.ts    Asset/sector/look-through exposure, concentration
+      discovery.ts            Universe, coverage, eligibility, attention score
+      discoveryFeatures.ts    Stage A robust features and beta residuals
+      discoveryRanking.ts     Cross-sectional percentiles and attention groups
+      discoveryNovelty.ts     What changed since the previous scan
+      personalRelevance.ts    Why a candidate matters to this portfolio
   forecast-engine/
     worker.py                 NDJSON sidecar entry point
     kronos_adapter.py         Pinned Kronos model/tokenizer adapter
@@ -487,6 +504,15 @@ The renderer does not directly call remote market endpoints. It asks the Electro
 | `npm run test:quant` | Run deterministic signal-engine tests (needs Python 3.10-3.12 for the forecast worker checks) |
 | `npm run test:signal-v2` | Run Signal Engine V2 execution, replay, and statistics tests |
 | `npm run test:unified` | Run unified signal model, Price Acceptance, and QRM decision tests |
+| `npm run test:market-data-v3` | Run persistent market cache and session-aware chart tests |
+| `npm run test:chart-v3` | Run chart workspace, session header, and extended-hours tests |
+| `npm run test:events-v3` | Run event reaction and offline event-adapter parser tests |
+| `npm run test:signal-history-v3` | Run immutable signal history and marker tests |
+| `npm run test:portfolio-v3` | Run portfolio store, aggregation, exposure, and CSV import tests |
+| `npm run test:portfolio-risk-v3` | Run portfolio risk mathematics tests |
+| `npm run test:discovery-v3` | Run discovery eligibility, features, attention, and novelty tests |
+| `npm run test:qrm-v3` | Run QRM leakage, reproducibility, and statistical tests |
+| `npm run research:qrm -- --fixture` | Run the QRM walk-forward research loop offline |
 | `npm run test:start` | Test one-command startup planning without installing or launching |
 | `npm run check:forecast` | Run forecast TypeScript, integration, resilience, Python, packaging, build, and browser-harness checks |
 | `npm run setup:forecast` | Create the local Python environment and verify the pinned Kronos source |
