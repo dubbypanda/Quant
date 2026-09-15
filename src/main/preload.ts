@@ -15,6 +15,7 @@ import type {
   ChartEventRecord,
   ChartRequest,
   HistoricalSignalSnapshot,
+  DiscoveryRunResponse,
   MarketCacheStats,
   PortfolioWriteResult,
   EarningsEvent,
@@ -50,6 +51,11 @@ import type {
 import type { PortfolioRiskReport } from '../shared/portfolioRisk';
 import type { PortfolioExposureReport } from '../shared/portfolioExposure';
 import type { PortfolioCsvPreview } from './services/portfolioImport';
+import type {
+  DiscoveryEligibilitySettings,
+  DiscoveryRunResult,
+  UniverseHydrationStatus,
+} from '../shared/discovery';
 
 type ForecastEventChannel =
   | typeof IPC.forecastProgress
@@ -149,6 +155,17 @@ const api: QuantApi = {
     ipcRenderer.invoke(IPC.portfolioCsvPreview, text),
   importPortfolioCsv: (text: string, accountId: string): Promise<PortfolioWriteResult> =>
     ipcRenderer.invoke(IPC.portfolioCsvImport, text, accountId),
+  getDiscoveryHydrationStatus: (): Promise<UniverseHydrationStatus> =>
+    ipcRenderer.invoke(IPC.discoveryHydrationStatus),
+  startDiscoveryHydration: (): Promise<UniverseHydrationStatus> =>
+    ipcRenderer.invoke(IPC.discoveryHydrationStart),
+  stopDiscoveryHydration: (): Promise<UniverseHydrationStatus> =>
+    ipcRenderer.invoke(IPC.discoveryHydrationStop),
+  runDiscovery: (
+    settings?: Partial<DiscoveryEligibilitySettings>,
+  ): Promise<DiscoveryRunResponse> => ipcRenderer.invoke(IPC.discoveryRun, settings),
+  getLatestDiscovery: (): Promise<DiscoveryRunResult | null> =>
+    ipcRenderer.invoke(IPC.discoveryLatest),
   getSignalHistory: (
     symbol: string,
     from?: number,

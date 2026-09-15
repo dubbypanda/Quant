@@ -55,6 +55,18 @@ import {
 } from './services/portfolioService';
 import { buildCsvPreview, csvPreviewToLots } from './services/portfolioImport';
 import {
+  getUniverseHydrationStatus,
+  startUniverseHydration,
+  stopUniverseHydration,
+} from './services/universeHydrator';
+import {
+  getActiveDiscoveryRun,
+  getLatestDiscoveryRun,
+  runDiscovery,
+} from './services/discoveryDeepScan';
+import { pruneDiscoveryHistory } from './services/discoveryHistoryStore';
+import { DEFAULT_ELIGIBILITY_SETTINGS } from '../shared/discovery';
+import {
   getSignalHistory,
   migrateV2SignalOutcomes,
 } from './services/signalHistoryStore';
@@ -608,6 +620,73 @@ function registerIpcHandlers(): void {
     return portfolioWrite(() => addPortfolioLots(lots));
   });
 
+  // ---- Discovery -----------------------------------------------------
+  ipcMain.handle(IPC.discoveryHydrationStatus, async () => getUniverseHydrationStatus());
+
+  ipcMain.handle(IPC.discoveryHydrationStart, async () => {
+    // Fire and forget: hydration is a long background walk and the renderer
+    // polls status rather than awaiting the whole universe.
+    void startUniverseHydration().catch((error) => {
+      console.warn('[discovery] hydration failed:', error);
+    });
+    return getUniverseHydrationStatus();
+  });
+
+  ipcMain.handle(IPC.discoveryHydrationStop, async () => {
+    stopUniverseHydration();
+    return getUniverseHydrationStatus();
+  });
+
+  ipcMain.handle(IPC.discoveryRun, async (_e, rawSettings: unknown) => {
+    const active = getActiveDiscoveryRun();
+    if (active) {
+      // A duplicate request reports the in-flight run instead of starting a
+      // second full-universe computation.
+      return { status: 'running', id: active.id, startedAt: active.startedAt };
+    }
+    const raw = rawSettings && typeof rawSettings === 'object'
+      ? (rawSettings as Record<string, unknown>)
+      : {};
+    const numberOr = (value: unknown, fallback: number): number =>
+      typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : fallback;
+    const booleanOr = (value: unknown, fallback: boolean): boolean =>
+      typeof value === 'boolean' ? value : fallback;
+    const settings = {
+      minimumPrice: numberOr(raw.minimumPrice, DEFAULT_ELIGIBILITY_SETTINGS.minimumPrice),
+      minimumMedianDollarVolume20: numberOr(
+        raw.minimumMedianDollarVolume20,
+        DEFAULT_ELIGIBILITY_SETTINGS.minimumMedianDollarVolume20,
+      ),
+      minimumHistoryBars: numberOr(
+        raw.minimumHistoryBars,
+        DEFAULT_ELIGIBILITY_SETTINGS.minimumHistoryBars,
+      ),
+      includeEtfs: booleanOr(raw.includeEtfs, DEFAULT_ELIGIBILITY_SETTINGS.includeEtfs),
+      includeLeveragedEtfs: booleanOr(
+        raw.includeLeveragedEtfs,
+        DEFAULT_ELIGIBILITY_SETTINGS.includeLeveragedEtfs,
+      ),
+      includeInverseEtfs: booleanOr(
+        raw.includeInverseEtfs,
+        DEFAULT_ELIGIBILITY_SETTINGS.includeInverseEtfs,
+      ),
+      includeSingleStockEtfs: booleanOr(
+        raw.includeSingleStockEtfs,
+        DEFAULT_ELIGIBILITY_SETTINGS.includeSingleStockEtfs,
+      ),
+    };
+    try {
+      return { status: 'completed', result: await runDiscovery({ settings }) };
+    } catch (error) {
+      return {
+        status: 'failed',
+        message: error instanceof Error ? error.message : 'The discovery run failed.',
+      };
+    }
+  });
+
+  ipcMain.handle(IPC.discoveryLatest, async () => getLatestDiscoveryRun());
+
   ipcMain.handle(IPC.pivotNewsGet, async (_e, rawSymbol: unknown, rawPivots: unknown) => {
     const pivots = cleanPivots(rawPivots);
     const symbol = normalizeSymbol(rawSymbol);
@@ -1014,6 +1093,19 @@ if (!gotLock) {
     } catch (error) {
       console.warn('[signal-history] migration skipped:', error);
     }
+
+    // Universe hydration is a background walk that must not delay startup, so
+    // it begins well after first paint and can be stopped from the UI.
+    setTimeout(() => {
+      void startUniverseHydration().catch((error) => {
+        console.warn('[discovery] hydration could not start:', error);
+      });
+      try {
+        pruneDiscoveryHistory();
+      } catch (error) {
+        console.warn('[discovery] history prune skipped:', error);
+      }
+    }, 15_000);
 
     // Cache pruning runs once after ready and at most once per 24 hours after
     // that, always on the main thread. Deferred past window creation so a large

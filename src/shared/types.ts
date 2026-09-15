@@ -551,6 +551,11 @@ export type PortfolioWriteResult =
   | { ok: true; document: import('./portfolio').PortfolioDocumentV3 }
   | { ok: false; errors: string[] };
 
+export type DiscoveryRunResponse =
+  | { status: 'completed'; result: import('./discovery').DiscoveryRunResult }
+  | { status: 'running'; id: string; startedAt: string }
+  | { status: 'failed'; message: string };
+
 export interface QuantApi {
   forecast: import('./forecast').ForecastApi;
   getWatchlist(): Promise<WatchlistItem[]>;
@@ -619,6 +624,15 @@ export interface QuantApi {
     text: string,
   ): Promise<import('../main/services/portfolioImport').PortfolioCsvPreview>;
   importPortfolioCsv(text: string, accountId: string): Promise<PortfolioWriteResult>;
+  getDiscoveryHydrationStatus(): Promise<import('./discovery').UniverseHydrationStatus>;
+  startDiscoveryHydration(): Promise<import('./discovery').UniverseHydrationStatus>;
+  stopDiscoveryHydration(): Promise<import('./discovery').UniverseHydrationStatus>;
+  /** A second call while a run is active returns that run's status rather than
+   *  launching duplicate computation. */
+  runDiscovery(settings?: Partial<
+    import('./discovery').DiscoveryEligibilitySettings
+  >): Promise<DiscoveryRunResponse>;
+  getLatestDiscovery(): Promise<import('./discovery').DiscoveryRunResult | null>;
   /** Read-only. History writes stay main-process internal so a renderer cannot
    *  forge a historical signal record. */
   getSignalHistory(

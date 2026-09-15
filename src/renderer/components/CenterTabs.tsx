@@ -5,6 +5,8 @@ import { NewsFeed } from './NewsFeed';
 import { SignalBoard } from './SignalBoard';
 import { SettingsPanel } from './SettingsPanel';
 import { PortfolioPage } from './portfolio/PortfolioPage';
+import { DiscoverPage } from './discovery/DiscoverPage';
+import { TodayPage } from './discovery/TodayPage';
 import '../styles/analysis.css';
 import '../styles/signals.css';
 
@@ -13,6 +15,15 @@ export function CenterTabs() {
   return (
     <div className="center-tabs">
       <div className="ct-bar" role="tablist" aria-label="Center workspace">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={state.centerTab === 'today'}
+          className={state.centerTab === 'today' ? 'ct-tab is-active' : 'ct-tab'}
+          onClick={() => actions.setCenterTab('today')}
+        >
+          Today
+        </button>
         <button
           type="button"
           role="tab"
@@ -52,6 +63,15 @@ export function CenterTabs() {
         <button
           type="button"
           role="tab"
+          aria-selected={state.centerTab === 'discover'}
+          className={state.centerTab === 'discover' ? 'ct-tab is-active' : 'ct-tab'}
+          onClick={() => actions.setCenterTab('discover')}
+        >
+          Discover
+        </button>
+        <button
+          type="button"
+          role="tab"
           aria-selected={state.centerTab === 'portfolio'}
           className={state.centerTab === 'portfolio' ? 'ct-tab is-active' : 'ct-tab'}
           onClick={() => actions.setCenterTab('portfolio')}
@@ -74,6 +94,12 @@ export function CenterTabs() {
           {state.centerTab === 'news' && <NewsFeed />}
           {state.centerTab === 'analysis' && <AnalysisLab />}
           {state.centerTab === 'signals' && <SignalBoard />}
+          {state.centerTab === 'today' && (
+            <TodayPage onOpenSymbol={(symbol) => actions.openChart(symbol)} />
+          )}
+          {state.centerTab === 'discover' && (
+            <DiscoverPage onOpenSymbol={(symbol) => actions.openChart(symbol)} />
+          )}
           {state.centerTab === 'portfolio' && (
             <PortfolioPage onOpenSymbol={(symbol) => actions.openChart(symbol)} />
           )}

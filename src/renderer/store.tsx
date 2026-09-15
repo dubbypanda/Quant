@@ -19,7 +19,15 @@ export interface AppState {
   quotes: Record<string, Quote>;
   holdings: Record<string, HoldingsResult>; // keyed by ETF symbol
   newsFilter: string; // 'all' or a watchlist symbol
-  centerTab: 'pulse' | 'news' | 'analysis' | 'signals' | 'portfolio' | 'settings';
+  centerTab:
+    | 'today'
+    | 'pulse'
+    | 'news'
+    | 'analysis'
+    | 'signals'
+    | 'discover'
+    | 'portfolio'
+    | 'settings';
   pinnedSymbols: string[];
   modalSymbol: string | null;
 }
@@ -203,6 +211,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       tab === 'news' ||
       tab === 'signals' ||
       tab === 'portfolio' ||
+      tab === 'today' ||
+      tab === 'discover' ||
       tab === 'settings'
     ) {
       dispatch({ type: 'centerTab', value: tab });
