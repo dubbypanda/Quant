@@ -2,6 +2,25 @@
 
 All notable changes to Quant are documented here.
 
+## [Unreleased]
+
+### Added
+- Added a **Unified Signal model** ported from the Quantactic iOS engine: every user-facing surface resolves to exactly one of `BUY` / `WAIT` / `SELL`, with a seven-category evidence list that explains it. The raw `SignalCoreEvaluation` is unchanged and still carries the deterministic decision for the harness, journal, and replay; `SignalDeskResult.unified` is the conclusion a surface should render.
+- Added **gate-based conclusion resolution** (`unifiedSignalResolver.ts`). A high setup quality can rank clarity inside a conclusion but can never promote a `WAIT`: a missing trigger, an unusable risk plan, blocking event risk, or two contradicting categories all hold the conclusion at `WAIT` regardless of score. Strength is capped at 74 for a `WAIT` and floored at 55 for a decided conclusion so the number cannot contradict the word beside it.
+- Added **Price Acceptance** and estimated volume-at-price (`volumeProfile.ts`). Each bar's volume is distributed across the range it traded through rather than onto its close, producing a point of control and a 70% value area. Acceptance requires completed closes beyond a boundary, distance measured in ATR, and participation — so price *printing* through a level is no longer read as a breakout. Results are always marked as approximations derived from OHLCV, never as exchange volume-at-price.
+- Added **Wilder-smoothed indicator math** (`indicators.ts`): series-returning ATR, RSI, EMA, and MACD, aligned to the candle series so a replay can read the value as it stood at any bar.
+- Added a **raw factor layer** (`signalFactors.ts`) with fixed per-kind polarity, so evidence can state what price is doing independently of the conclusion being argued. A factor kind that reaches no evidence category fails to compile.
+- Added **QRM-3 research contracts** (`qrm.ts`) and the **experimental decision functional** (`qrmDecision.ts`) from `docs/quant-v3/05`, including the section 12 entry-location metric. The functional gates on forward asymmetry rather than on a trailing score, which is what makes a peak entry structurally hard to produce. It is explicitly experimental and non-authoritative; Signal Engine V2 remains the deterministic authority.
+- Added a **Kronos-to-QRM distribution adapter** and neutral `ResearchModelView` renderings (`kronosDistribution.ts`). Per `docs/quant-v3/05` section 18 the two models are never merged by averaging: each keeps its native semantics, and a disagreement is surfaced as research context.
+- Added an 11-part automated test suite for the above (`npm run test:unified`).
+
+### Fixed
+- Fixed a price-structure bug that made the `breakout` setup unreachable. `nearestResistance` fell back to the highest high of the trailing window *including the bar being evaluated*, so on any push to a new high it returned that bar's own high — a level the close is under by construction. `classifySetup` could therefore never satisfy `close > resistance`, and `evaluateSignalCore` reported a fraction-of-a-percent distance to resistance that vetoed genuine breakouts as "too close to resistance for a long trade". Structure levels now come from closed bars only (`swingHigh` / `swingLow`), and `null` is returned when price has cleared every level in the window instead of a level derived from the forming bar.
+- Fixed `getForwardSummary` reporting `firstSignalAt` and `lastResolvedAt` from array positions. Record order stops being chronological after the store is pruned, so both timestamps could name the wrong record; they are now reduced over the values.
+- Fixed forward-outcome pruning discarding the newest resolved records. A previous prune rewrites the file as `[unresolved..., resolved...]`, after which slicing the tail no longer selects the most recent; records are now sorted by signal bar time before pruning.
+- Fixed `npm run typecheck` failing on the `logoQuant.png` import by adding ambient declarations for the static assets esbuild inlines as data URLs.
+- Removed an unused `DEFAULT_EXECUTION_CONFIG` import from `signalValidation.ts`.
+
 ## [2.1.0] - 2026-08-19
 
 ### Added

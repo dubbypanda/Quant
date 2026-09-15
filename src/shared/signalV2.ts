@@ -6,6 +6,7 @@ import type {
   TradeDecision,
   TradeDirection,
 } from './quant';
+import type { UnifiedSignalSummary } from './unifiedSignal';
 
 export type {
   MarketRegime,
@@ -15,6 +16,7 @@ export type {
   TradeDecision,
   TradeDirection,
 };
+export type { UnifiedSignalSummary };
 
 export const SIGNAL_ENGINE_V2 = {
   strategyVersion: 'QuantDeskSignal_v2',
@@ -156,5 +158,12 @@ export interface SignalDeskResult {
   evaluation: SignalCoreEvaluation | null;
   historical: HistoricalValidationSummary | null;
   forward: ForwardRecordSummary | null;
+  /**
+   * The single BUY / WAIT / SELL conclusion every user-facing surface should
+   * read, with the evidence that explains it. `evaluation` remains the raw
+   * deterministic output for the harness, the journal and the replay; a surface
+   * that renders both is showing the user two scales to reconcile.
+   */
+  unified: UnifiedSignalSummary | null;
   warnings: string[];
 }

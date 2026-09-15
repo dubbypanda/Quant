@@ -19,6 +19,8 @@
     "typecheck": "tsc --noEmit",
     "test:quant": "node scripts/test-quant.mjs",
     "test:signal-v2": "node scripts/test-signal-v2.mjs",
+    "test:unified": "node scripts/test-unified-signal.mjs",
+    "test:market-data-v3": "node scripts/test-chart-v3.mjs && node scripts/test-market-cache-v3.mjs",
     "test:forecast:smoke": "node scripts/test-forecast-fast-ui.mjs",
     "test:forecast:harness": "node scripts/test-forecast-harness.mjs",
     "check:forecast": "node scripts/check-forecast-release.mjs",

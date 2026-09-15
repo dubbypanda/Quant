@@ -102,9 +102,13 @@ export function writeAllOutcomeRecords(
     const unresolved = records.filter((r) => r.status !== 'resolved' && r.status !== 'skipped');
     const resolved = records.filter((r) => r.status === 'resolved' || r.status === 'skipped');
     const keepCount = Math.max(0, MAX_STORED_RECORDS - unresolved.length);
-    // Keep the most recent resolved
-    const keptResolved = resolved.slice(-keepCount);
-    pruned = [...unresolved, ...keptResolved];
+    // Sort explicitly: a previous prune already rewrote the file as
+    // [unresolved..., resolved...], so array position no longer tracks age and
+    // slicing the tail would have discarded the newest records.
+    const keptResolved = [...resolved]
+      .sort((a, b) => a.signalBarTime - b.signalBarTime)
+      .slice(-keepCount);
+    pruned = [...unresolved, ...keptResolved].sort((a, b) => a.signalBarTime - b.signalBarTime);
   }
 
   const temp = `${filePath}.tmp`;
@@ -278,8 +282,20 @@ export function getForwardSummary(
         )
       : null;
 
-  const firstSignalAt = matching[0]?.observedAt;
-  const lastResolvedAt = resolved[resolved.length - 1]?.resolvedAt;
+  // Reduced over the values rather than read off the ends of the array: record
+  // order is not chronological once the store has been pruned or reloaded.
+  const observedTimes = matching
+    .map((r) => r.observedAt)
+    .filter((value): value is string => Boolean(value));
+  const resolvedTimes = resolved
+    .map((r) => r.resolvedAt)
+    .filter((value): value is string => Boolean(value));
+  const firstSignalAt = observedTimes.length
+    ? observedTimes.reduce((min, value) => (value < min ? value : min))
+    : undefined;
+  const lastResolvedAt = resolvedTimes.length
+    ? resolvedTimes.reduce((max, value) => (value > max ? value : max))
+    : undefined;
 
   return {
     resolvedSignals: resolved.length,

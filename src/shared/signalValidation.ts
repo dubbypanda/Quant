@@ -12,7 +12,7 @@ import type {
 import { DEFAULT_RISK_SETTINGS, evaluateSignalCore } from './quant';
 import { findPivots } from './priceStructure';
 import type { ExecutionSimulatorConfig } from './executionSimulator';
-import { DEFAULT_EXECUTION_CONFIG, simulateTrade } from './executionSimulator';
+import { simulateTrade } from './executionSimulator';
 import type {
   HistoricalValidationSummary,
   SimulatedTrade,

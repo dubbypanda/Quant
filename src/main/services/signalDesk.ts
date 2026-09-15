@@ -12,6 +12,8 @@ import { SIGNAL_ENGINE_V2 } from '../../shared/signalV2';
 import { DEFAULT_RISK_SETTINGS, evaluateSignalCore } from '../../shared/quant';
 import { findPivots } from '../../shared/priceStructure';
 import { validateHistoricalStrategy } from '../../shared/signalValidation';
+import { resolveUnifiedSignal } from '../../shared/unifiedSignalResolver';
+import { UNIFIED_SIGNAL_MODEL_VERSION } from '../../shared/unifiedSignal';
 import { getDailyHistory } from './dailyHistory';
 import {
   evaluatePendingForwardSignals,
@@ -45,6 +47,7 @@ export function unavailableSignalDesk(
     evaluation: null,
     historical: null,
     forward: getForwardSummary(symbol),
+    unified: null,
     warnings: [warning],
   };
 }
@@ -67,6 +70,7 @@ export function buildSignalDesk(
       evaluation: null,
       historical: null,
       forward: getForwardSummary(symbol),
+      unified: null,
       warnings: [history.warning ?? 'Live daily history is unavailable.'],
     };
   }
@@ -117,6 +121,15 @@ export function buildSignalDesk(
   evaluatePendingForwardSignals(symbol, candles);
   const forward = getForwardSummary(symbol, evaluation.setupType, evaluation.direction);
 
+  // Resolved after the expectancy downgrade above, so the conclusion the user
+  // sees reflects the same blockers the raw decision does.
+  const unified = resolveUnifiedSignal({
+    symbol,
+    candles: currentCandles,
+    evaluation,
+    riskSettings: DEFAULT_RISK_SETTINGS,
+  });
+
   return {
     status: 'ready',
     symbol,
@@ -126,6 +139,7 @@ export function buildSignalDesk(
     evaluation,
     historical,
     forward,
+    unified,
     warnings: [],
   };
 }
@@ -146,12 +160,16 @@ export async function getSignalDesk(symbolRaw: string): Promise<SignalDeskResult
       evaluation: null,
       historical: null,
       forward: getForwardSummary(symbol),
+      unified: null,
       warnings: [history.warning ?? 'Live daily history is unavailable.'],
     };
   }
 
   const lastBarTime = history.candles[history.candles.length - 1]?.time ?? 0;
-  const cacheKey = `${symbol}:${lastBarTime}:${SIGNAL_ENGINE_V2.strategyVersion}:${SIGNAL_ENGINE_V2.executionModelVersion}`;
+  // The unified model version is part of the key: a cached result carries a
+  // conclusion produced by a specific resolver, so bumping the resolver has to
+  // invalidate it.
+  const cacheKey = `${symbol}:${lastBarTime}:${SIGNAL_ENGINE_V2.strategyVersion}:${SIGNAL_ENGINE_V2.executionModelVersion}:${UNIFIED_SIGNAL_MODEL_VERSION}`;
 
   const cached = signalDeskCache.get(cacheKey);
   const now = Date.now();

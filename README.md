@@ -436,6 +436,16 @@ Quant/
       types.ts                Shared API and market data contracts
       quant.ts                Deterministic signal engine
       signals.ts              Multi-symbol pattern detector
+      indicators.ts           Wilder ATR/RSI, EMA, MACD series math
+      signalFactors.ts        Raw scored factors and indicator readings
+      volumeProfile.ts        Estimated volume-at-price and Price Acceptance
+      unifiedSignal.ts        BUY/WAIT/SELL vocabulary, evidence model, copy
+      signalEvidenceAggregator.ts  Factors consolidated into evidence categories
+      signalReasonPrioritizer.ts   The at most two reasons a card may show
+      unifiedSignalResolver.ts     Gate-based conclusion and strength
+      qrm.ts                  QRM-3 research contracts (experimental)
+      qrmDecision.ts          QRM-3 experimental decision functional and entry quality
+      kronosDistribution.ts   Kronos ensemble to QRM distribution adapter and model views
   forecast-engine/
     worker.py                 NDJSON sidecar entry point
     kronos_adapter.py         Pinned Kronos model/tokenizer adapter
@@ -474,7 +484,9 @@ The renderer does not directly call remote market endpoints. It asks the Electro
 | --- | --- |
 | `npm run build` | Bundle Electron main, preload, renderer, and static data into `dist/` |
 | `npm run typecheck` | Run TypeScript type checking without emitting files |
-| `npm run test:quant` | Run deterministic signal-engine tests |
+| `npm run test:quant` | Run deterministic signal-engine tests (needs Python 3.10-3.12 for the forecast worker checks) |
+| `npm run test:signal-v2` | Run Signal Engine V2 execution, replay, and statistics tests |
+| `npm run test:unified` | Run unified signal model, Price Acceptance, and QRM decision tests |
 | `npm run test:start` | Test one-command startup planning without installing or launching |
 | `npm run check:forecast` | Run forecast TypeScript, integration, resilience, Python, packaging, build, and browser-harness checks |
 | `npm run setup:forecast` | Create the local Python environment and verify the pinned Kronos source |
