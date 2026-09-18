@@ -17,10 +17,6 @@ All notable changes to Quant are documented here.
 - Renamed the default UI scope from “US stocks” to “Curated U.S.” so the product no longer implies exhaustive whole-market coverage.
 - Added attempted/scanned/unavailable coverage accounting and renamed the misleading internal `bullishPercent` metric to `signalBreadthPercent`.
 
-### Provider cleanup
-- Removed a retired cloud LLM provider from the provider registry, transport implementation, settings, onboarding, environment mapping, documentation, and tests.
-- Unknown or retired persisted provider settings now reset provider-specific URL, model, and encrypted credential fields instead of carrying incompatible configuration forward.
-
 ### Repository quality
 - Added `npm run verify` as the deterministic local baseline before packaging or release.
 - Stopped tracking generated `dist/` output and added it to `.gitignore`; local builds still regenerate it normally.
@@ -294,11 +290,11 @@ All notable changes to Quant are documented here.
 
 ### Added
 
-- Added a dedicated Quant AI Settings tab for local llama.cpp, OpenAI, Google Gemini, and xAI Grok.
+- Added a dedicated Quant AI Settings tab for local llama.cpp, OpenAI, Google Gemini, xAI Grok, and Anthropic Claude.
 - Added editable provider endpoint and model settings plus a real connection test that verifies the selected endpoint, authentication, and model with a minimal completion.
 - Added OS-backed encrypted cloud API-key storage through Electron `safeStorage`; saved credentials are never returned to the renderer.
 - Reused the complete provider setup and connection-test interface in the first-run onboarding wizard.
-- Added cloud-provider transport support alongside the shared OpenAI-compatible adapter used by llama.cpp, OpenAI, Gemini, and Grok.
+- Added a native Claude Messages adapter alongside the shared OpenAI-compatible adapter used by llama.cpp, OpenAI, Gemini, and Grok.
 - Added an explicit three-month chart range.
 
 ### Fixed

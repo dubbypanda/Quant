@@ -2,7 +2,7 @@
 
 Quant is an open-source desktop market terminal for tracking ETFs and stocks. It combines a reorderable watchlist, holdings-driven news, earnings context, annotated charts, macro overlays, causal setup-specific signal validation, an authoritative 1D Signal Desk, local probabilistic forecasts, an evidence-backed decision journal, and a verified Quant AI harness.
 
-The core promise is simple: useful market context without paid API lock-in. Quant runs with public market data sources and deterministic signal analysis, can connect to a private llama.cpp server, or interface with an optional OpenAI, Gemini, or Grok account. No cloud LLM API key is required for the default experience.
+The core promise is simple: useful market context without paid API lock-in. Quant runs with public market data sources and deterministic signal analysis, can connect to a private llama.cpp server, or interface with an optional OpenAI, Gemini, Grok, or Claude account. No cloud LLM API key is required for the default experience.
 
 <p align="center">
   <img src="./docs/assets/showcase/quant-hero.png" alt="Quant desktop market terminal hero image" width="100%">
@@ -35,7 +35,7 @@ Quant is built for rapid, disciplined market scanning and evidence-backed decisi
 - **Macro Overlays:** Toggle jobs, unemployment, CPI, 10Y Treasury yield, crude oil, and VIX directly on price charts.
 - **Local Probabilistic Forecasts:** Run 24-trading-hour Kronos-mini time-series forecasts with 30 sampled paths and projected MA20 continuations.
 - **Evidence-Backed Decision Journal:** Save local thesis snapshots with immutable evidence items (E1–E5), quality audits, and trade plans.
-- **Verified Quant AI Desk:** Deterministic rule verifier paired with optional local llama.cpp or cloud LLMs (OpenAI, Gemini, Grok).
+- **Verified Quant AI Desk:** Deterministic rule verifier paired with optional local llama.cpp or cloud LLMs (OpenAI, Gemini, Grok, Claude).
 
 ## What's New in v2.2.0 — Correctness & Repository Hardening
 
@@ -125,7 +125,7 @@ Click the preview to watch the 12-second demo:
 
 ### Introduced in v1.3.0
 
-- Dedicated Quant AI Settings tab with local llama.cpp, OpenAI, Gemini, and Grok provider profiles.
+- Dedicated Quant AI Settings tab with local llama.cpp, OpenAI, Gemini, Grok, and Claude provider profiles.
 - Real connection testing for endpoint, authentication, and model configuration.
 - OS-encrypted cloud API-key storage that never returns saved credentials to the renderer.
 - The full provider setup is also available during first-run onboarding.
@@ -304,6 +304,7 @@ Available modes and providers:
 | OpenAI | `https://api.openai.com/v1` | `gpt-5.4-mini` | OpenAI API key |
 | Google Gemini | `https://generativelanguage.googleapis.com/v1beta/openai` | `gemini-3.5-flash` | Gemini API key |
 | xAI Grok | `https://api.x.ai/v1` | `grok-4.3` | xAI API key |
+| Anthropic Claude | `https://api.anthropic.com/v1` | `claude-sonnet-4-6` | Anthropic API key |
 
 ### Local llama.cpp
 
@@ -408,7 +409,7 @@ Quant/
         holdings.ts           ETF holdings lookup
         insightStore.ts       Saved Quant AI insight records
         journalStore.ts       Transactional local Decision Journal persistence
-        llmProvider.ts        OpenAI-compatible request adapter
+        llmProvider.ts        OpenAI-compatible and Claude request adapters
         llmSettings.ts        Provider settings and encrypted credential persistence
         macro.ts              Jobs, unemployment, CPI, 10Y, oil, VIX overlays
         news.ts               Market news aggregation

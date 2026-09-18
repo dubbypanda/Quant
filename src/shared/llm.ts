@@ -48,6 +48,14 @@ export const LLM_PROVIDERS: LlmProviderDefinition[] = [
     model: 'grok-4.3',
     requiresApiKey: true,
   },
+  {
+    id: 'claude',
+    label: 'Anthropic Claude',
+    description: 'Claude through the native Messages API.',
+    baseUrl: 'https://api.anthropic.com/v1',
+    model: 'claude-sonnet-4-6',
+    requiresApiKey: true,
+  },
 ];
 
 export function isLlmProvider(value: unknown): value is LlmProvider {

@@ -328,7 +328,7 @@ export interface QuantJournalEntry {
   };
 }
 
-export type LlmProvider = 'local' | 'openai' | 'gemini' | 'grok';
+export type LlmProvider = 'local' | 'openai' | 'gemini' | 'grok' | 'claude';
 
 export interface LlmSettings {
   enabled: boolean;

@@ -7,6 +7,11 @@ interface OpenAiChatResponse {
   error?: { message?: string };
 }
 
+interface ClaudeResponse {
+  content?: Array<{ type?: string; text?: string }>;
+  error?: { message?: string };
+}
+
 function errorMessage(json: unknown, fallback: string): string {
   if (!json || typeof json !== 'object') return fallback;
   const error = (json as { error?: { message?: unknown } }).error;
@@ -31,6 +36,29 @@ export async function completeLlm(
   if (settings.provider !== 'local' && !settings.apiKey) {
     throw new Error(`${settings.provider} API key is required`);
   }
+  if (settings.provider === 'claude') {
+    const response = await fetch(`${settings.baseUrl}/messages`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': settings.apiKey ?? '',
+        'anthropic-version': '2023-06-01',
+      },
+      signal: AbortSignal.timeout(timeoutMs),
+      body: JSON.stringify({
+        model: settings.model,
+        max_tokens: maxTokens,
+        system,
+        messages: [{ role: 'user', content: user }],
+      }),
+    });
+    const json = (await responseJson(response)) as ClaudeResponse | null;
+    if (!response.ok) throw new Error(errorMessage(json, `Claude HTTP ${response.status}`));
+    const answer = json?.content?.filter((item) => item.type === 'text').map((item) => item.text ?? '').join('\n').trim();
+    if (!answer) throw new Error('Claude returned an empty answer');
+    return answer;
+  }
+
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (settings.apiKey) headers.Authorization = `Bearer ${settings.apiKey}`;
   const tokenLimit = settings.provider === 'openai'

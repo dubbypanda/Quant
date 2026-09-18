@@ -226,7 +226,7 @@ export function OnboardingWizard() {
               <p>
                 Quant AI is optional. When disabled, the agent still returns a deterministic
                 memo from the signal engine. Use local llama.cpp for private inference or
-                provide an optional OpenAI, Gemini, or Grok API key.
+                provide an optional OpenAI, Gemini, Grok, or Claude API key.
               </p>
             </div>
             <LlmSetupForm compact onSaved={() => setStep('tips')} />
