@@ -178,24 +178,67 @@ function recentPivots(pivots: PivotPoint[], kind: PivotPoint['kind']): PivotPoin
   return pivots.filter((p) => p.kind === kind).slice(-3);
 }
 
+/** Highest high over `lookback` bars ending `offset` bars back from the end of
+ *  the series. `offset` defaults to 1, which excludes the bar being evaluated:
+ *  a bar is never its own overhead supply. Returns null when the window is
+ *  empty. */
+export function swingHigh(candles: Candle[], lookback = 20, offset = 1): number | null {
+  const end = candles.length - offset;
+  if (end <= 0) return null;
+  let high = -Infinity;
+  for (let i = Math.max(0, end - lookback); i < end; i++) {
+    if (candles[i].high > high) high = candles[i].high;
+  }
+  return Number.isFinite(high) ? high : null;
+}
+
+/** Lowest low over `lookback` bars ending `offset` bars back. Mirror of
+ *  `swingHigh`. */
+export function swingLow(candles: Candle[], lookback = 20, offset = 1): number | null {
+  const end = candles.length - offset;
+  if (end <= 0) return null;
+  let low = Infinity;
+  for (let i = Math.max(0, end - lookback); i < end; i++) {
+    if (candles[i].low < low) low = candles[i].low;
+  }
+  return Number.isFinite(low) ? low : null;
+}
+
+/** Nearest structural level below the last close, or null when the close has
+ *  broken under every level in the trailing window.
+ *
+ *  Null is the meaningful answer: a fallback that derived the level from the
+ *  forming bar's own low reported support a hair under the close on every
+ *  breakdown, which then read as "too close to support to short". */
 function nearestSupport(candles: Candle[], pivots: PivotPoint[]): number | null {
   const close = last(candles)?.close;
   if (!isFiniteNumber(close)) return null;
-  const supports = pivots
+  const pivotLevel = pivots
     .filter((p) => p.kind === 'low' && p.price < close)
     .map((p) => p.price)
-    .sort((a, b) => b - a);
-  return supports[0] ?? Math.min(...candles.slice(-20).map((c) => c.low));
+    .sort((a, b) => b - a)[0];
+  if (isFiniteNumber(pivotLevel)) return pivotLevel;
+  const swing = swingLow(candles);
+  return isFiniteNumber(swing) && swing < close ? swing : null;
 }
 
+/** Nearest structural level above the last close, or null when the close has
+ *  cleared every level in the trailing window.
+ *
+ *  The old fallback took the highest high of the trailing window *including*
+ *  the current bar, so on any push to a new high it returned that bar's own
+ *  high — a level the close is under by construction. That made `breakout`
+ *  unreachable and vetoed real breakouts as "too close to resistance". */
 function nearestResistance(candles: Candle[], pivots: PivotPoint[]): number | null {
   const close = last(candles)?.close;
   if (!isFiniteNumber(close)) return null;
-  const resistances = pivots
+  const pivotLevel = pivots
     .filter((p) => p.kind === 'high' && p.price > close)
     .map((p) => p.price)
-    .sort((a, b) => a - b);
-  return resistances[0] ?? Math.max(...candles.slice(-20).map((c) => c.high));
+    .sort((a, b) => a - b)[0];
+  if (isFiniteNumber(pivotLevel)) return pivotLevel;
+  const swing = swingHigh(candles);
+  return isFiniteNumber(swing) && swing > close ? swing : null;
 }
 
 export function analyticsFor(candles: Candle[], pivots: PivotPoint[]): AnalyticsSummary {
@@ -206,11 +249,13 @@ export function analyticsFor(candles: Candle[], pivots: PivotPoint[]): Analytics
   const avgVolume20 = mean(candles.slice(-20).map((c) => c.volume));
   const support = candles.length ? nearestSupport(candles, pivots) : null;
   const resistance = candles.length ? nearestResistance(candles, pivots) : null;
+  const sma20 = sma(candles, 20);
+  const sma50 = sma(candles, 50);
   return {
     lastClose: round(lastClose),
     changePercent: prev && prev.close !== 0 ? round(((lastClose - prev.close) / prev.close) * 100, 2) : 0,
-    sma20: sma(candles, 20) === null ? null : round(sma(candles, 20) as number),
-    sma50: sma(candles, 50) === null ? null : round(sma(candles, 50) as number),
+    sma20: sma20 === null ? null : round(sma20),
+    sma50: sma50 === null ? null : round(sma50),
     atr14: atr14 === null ? null : round(atr14),
     atrPercent: atr14 && lastClose ? round((atr14 / lastClose) * 100, 2) : null,
     avgVolume20: avgVolume20 === null ? null : Math.round(avgVolume20),
@@ -265,11 +310,15 @@ export function classifySetup(
   const lows = recentPivots(pivots, 'low');
   const highs = recentPivots(pivots, 'high');
   const volumeRatio = analyticsFor(candles, pivots).volumeRatio ?? 1;
+  // Breakout levels must come from bars that are already closed, otherwise the
+  // level moves with the bar being tested and the comparison can never pass.
+  const priorHigh = swingHigh(candles, 20, 1);
+  const breakoutLevel = swingHigh(candles, 20, 2);
 
-  if (resistance && prev.close <= resistance && current.close > resistance && volumeRatio >= 1.2) {
+  if (priorHigh !== null && prev.close <= priorHigh && current.close > priorHigh && volumeRatio >= 1.2) {
     return 'breakout';
   }
-  if (resistance && prev.high > resistance && current.close < resistance) {
+  if (breakoutLevel !== null && prev.high > breakoutLevel && current.close < breakoutLevel) {
     return 'failed-breakout';
   }
   if (regime === 'breakout-compression') return 'range-compression';
