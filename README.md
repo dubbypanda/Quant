@@ -37,9 +37,20 @@ Quant is built for rapid, disciplined market scanning and evidence-backed decisi
 - **Evidence-Backed Decision Journal:** Save local thesis snapshots with immutable evidence items (E1–E5), quality audits, and trade plans.
 - **Verified Quant AI Desk:** Deterministic rule verifier paired with optional local llama.cpp or cloud LLMs (OpenAI, Gemini, Grok, Claude).
 
-## What's New in v2.2.0 — Quant Signal Engine V2
+## What's New in v2.2.0 — Correctness & Repository Hardening
 
-Quant v2.2.0 introduces **Quant Signal Engine V2**, completely overhauling the legacy generic rule score and unrelated breakout backtest with a causal, setup-specific, execution-aware, and self-validating signal system.
+v2.2.0 is deliberately a reliability release rather than a feature expansion:
+
+- **Correct price structure:** breakout and failed-breakout levels come from bars that were already closed when the setup formed.
+- **Live-only market rankings:** deterministic sample candles can preserve offline chart UX but cannot enter Signal Board rankings.
+- **Truthful coverage:** the default scanner is labeled **Curated U.S.** and reports attempted, successfully scanned, and unavailable names.
+- **Forward-record integrity:** pruning and first/last timestamps remain chronological even after the store is reordered.
+- **Cleaner source tree:** generated `dist/` output is ignored, and forecast implementation documents live under `docs/forecast/`.
+- **One-command baseline:** `npm run verify` runs type checking, core tests, Signal V2 regressions, and the production build.
+
+## What's New in v2.1.0 — Quant Signal Engine V2
+
+Quant v2.1.0 introduced **Quant Signal Engine V2**, overhauling the legacy generic rule score and unrelated breakout backtest with a causal, setup-specific, execution-aware signal system.
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────────┐

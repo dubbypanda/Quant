@@ -11,6 +11,7 @@ Quant v2.2.0 is a focused reliability release. It strengthens the public termina
 - **Forward-record correctness:** Pruning keeps the newest resolved outcomes and summary timestamps remain chronological after pruning/reloads.
 - **Regression coverage:** Signal V2 explicitly tests breakout structure plus forward-record ordering/pruning invariants.
 - **One-command verification:** `npm run verify` runs the deterministic local typecheck, core tests, Signal V2 tests, and production build.
+- **Repository hygiene:** Generated `dist/` output is no longer tracked, and Kronos implementation documents now live under `docs/forecast/`.
 
 ## 2.1.0 — Quant Signal Engine V2, Signal Board Candidate Filters, and New App Logo
 

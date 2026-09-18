@@ -21,5 +21,5 @@ Useful reports include:
 - Quant uses unofficial free market-data and RSS endpoints. Treat all remote content as untrusted.
 - External links are opened through Electron shell APIs after URL validation in the main process.
 - The renderer is loaded from local files with a restrictive Content Security Policy.
-- Local LLM support is disabled by default and must be explicitly enabled with environment variables.
+- Local/cloud LLM support is opt-in and remains inactive until the user explicitly configures a provider through Quant settings or local environment configuration.
 - Do not run Quant with a local model endpoint you do not trust.

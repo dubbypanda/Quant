@@ -9,7 +9,7 @@ Thank you for considering a contribution to Quant.
 - Treat market data as untrusted and potentially delayed.
 - Do not add paid data providers, secrets, or account-specific paths without making them optional.
 - Keep local LLM support optional. The app must remain usable without a model server.
-- Run typecheck and at least one smoke test before opening a pull request.
+- Run `npm run verify` before opening a pull request; run the relevant smoke test for UI/runtime changes.
 
 ## Local Setup
 
@@ -37,4 +37,4 @@ npm start
 
 ## Data and Secrets
 
-Do not commit API keys, local model paths, user watchlists, generated release folders, or private market data. Use environment variables for local configuration.
+Do not commit API keys, local model paths, user watchlists, generated `dist/` output, generated release folders, or private market data. Use environment variables for local configuration.
