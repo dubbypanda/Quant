@@ -29,7 +29,7 @@ export const LLM_PROVIDERS: LlmProviderDefinition[] = [
     label: 'OpenAI',
     description: 'OpenAI API using the Chat Completions interface.',
     baseUrl: 'https://api.openai.com/v1',
-    model: 'gpt-5.4-mini',
+    model: 'sol-high',
     requiresApiKey: true,
   },
   {

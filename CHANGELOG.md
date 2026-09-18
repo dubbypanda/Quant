@@ -5,6 +5,7 @@ All notable changes to Quant are documented here.
 ## [2.2.0] - 2026-09-17
 
 ### Provider defaults
+- Updated the default OpenAI model from `gpt-5.4-mini` to `sol-high`.
 - Updated the default Claude model from `claude-sonnet-4-6` to `claude-sonnet-5`.
 
 ### Correctness

@@ -301,7 +301,7 @@ Available modes and providers:
 | --- | --- | --- | --- |
 | Deterministic fallback | None | Rules engine | None |
 | Local llama.cpp | `http://127.0.0.1:8080/v1` | `gemma-4-e4b-it` | None |
-| OpenAI | `https://api.openai.com/v1` | `gpt-5.4-mini` | OpenAI API key |
+| OpenAI | `https://api.openai.com/v1` | `sol-high` | OpenAI API key |
 | Google Gemini | `https://generativelanguage.googleapis.com/v1beta/openai` | `gemini-3.5-flash` | Gemini API key |
 | xAI Grok | `https://api.x.ai/v1` | `grok-4.3` | xAI API key |
 | Anthropic Claude | `https://api.anthropic.com/v1` | `claude-sonnet-5` | Anthropic API key |
