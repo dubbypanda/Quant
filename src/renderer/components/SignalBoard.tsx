@@ -204,7 +204,11 @@ export function SignalBoard() {
         </div>
         <div className="sb-head-actions">
           <span className="sb-asof">
-            {result ? `${result.asOf} daily bar · ${timeLabel(result.generatedAt)}` : 'Preparing scan'}
+            {result
+              ? result.source === 'unavailable'
+                ? `Live scan unavailable · ${timeLabel(result.generatedAt)}`
+                : `${result.asOf} daily bar · ${timeLabel(result.generatedAt)}`
+              : 'Preparing scan'}
           </span>
           <button type="button" className="sb-refresh" onClick={() => setReloadKey((n) => n + 1)}>
             Refresh

@@ -237,7 +237,7 @@ export async function scanSignals(rawRequest?: unknown): Promise<SignalScanResul
   };
 
   const result: SignalScanResult = {
-    asOf: rows[0]?.asOf ?? ymdFromUnix(undefined),
+    asOf: allRows[0]?.asOf ?? ymdFromUnix(undefined),
     generatedAt: new Date().toISOString(),
     universe: request.universe ?? 'us-stocks',
     totalUniverse: universe.length,
