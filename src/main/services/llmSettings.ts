@@ -38,13 +38,16 @@ function encryptionAvailable(): boolean {
 }
 
 function normalizeStored(raw: Partial<StoredLlmSettings> | null | undefined): StoredLlmSettings {
-  const provider = isLlmProvider(raw?.provider) ? raw.provider : DEFAULT_PROVIDER;
+  const providerIsValid = isLlmProvider(raw?.provider);
+  const provider = providerIsValid ? raw.provider : DEFAULT_PROVIDER;
+  const preserveStoredProviderFields = raw?.provider === undefined || providerIsValid;
   const defaults = providerDefinition(provider);
-  const rawBase = typeof raw?.baseUrl === 'string' && raw.baseUrl.trim()
-    ? raw.baseUrl
-    : provider === 'local' && LEGACY_BASE_URL
-      ? LEGACY_BASE_URL
-      : defaults.baseUrl;
+  const rawBase =
+    preserveStoredProviderFields && typeof raw?.baseUrl === 'string' && raw.baseUrl.trim()
+      ? raw.baseUrl
+      : provider === 'local' && LEGACY_BASE_URL
+        ? LEGACY_BASE_URL
+        : defaults.baseUrl;
   const baseUrl = normalizeApiBaseUrl(rawBase);
   return {
     enabled: raw?.enabled === true || (raw?.enabled === undefined && envEnabled()),
@@ -54,11 +57,13 @@ function normalizeStored(raw: Partial<StoredLlmSettings> | null | undefined): St
         ? `${baseUrl}/v1`
         : baseUrl,
     model:
-      typeof raw?.model === 'string' && raw.model.trim()
+      preserveStoredProviderFields && typeof raw?.model === 'string' && raw.model.trim()
         ? raw.model.trim()
         : process.env.QUANT_LLM_MODEL?.trim() || defaults.model,
     encryptedApiKey:
-      typeof raw?.encryptedApiKey === 'string' && raw.encryptedApiKey
+      preserveStoredProviderFields &&
+      typeof raw?.encryptedApiKey === 'string' &&
+      raw.encryptedApiKey
         ? raw.encryptedApiKey
         : undefined,
   };
@@ -78,7 +83,6 @@ function environmentApiKey(provider: LlmProvider): string | undefined {
     openai: 'OPENAI_API_KEY',
     gemini: 'GEMINI_API_KEY',
     grok: 'XAI_API_KEY',
-    claude: 'ANTHROPIC_API_KEY',
   }[provider];
   return process.env[key]?.trim() || undefined;
 }
