@@ -152,15 +152,17 @@ export interface SignalScanRow {
   setupQuality?: number;
 }
 
+export type SignalScanSource = 'live' | 'unavailable';
+
 export interface SignalScanSummary {
-  bullishPercent: number;
+  signalBreadthPercent: number;
   hotCount: number;
   nearHighCount: number;
   cupCount: number;
   maAlignedCount: number;
   buyCandidateCount?: number;
   shortCandidateCount?: number;
-  source: DataSource;
+  source: SignalScanSource;
 }
 
 export interface SignalScanResult {
@@ -168,10 +170,12 @@ export interface SignalScanResult {
   generatedAt: string;
   universe: 'us-stocks' | 'watchlist';
   totalUniverse: number;
+  totalAttempted: number;
   totalScanned: number;
+  unavailableCount: number;
   rows: SignalScanRow[];
   summary: SignalScanSummary;
-  source: DataSource;
+  source: SignalScanSource;
 }
 
 /** A significant local high or low detected in the candle series. */

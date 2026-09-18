@@ -1,5 +1,4 @@
 import type {
-  DataSource,
   DetectedSignal,
   SignalKind,
   SignalScanRequest,
@@ -151,6 +150,9 @@ export async function scanSignals(rawRequest?: unknown): Promise<SignalScanResul
     selected.map((entry) =>
       limit(async (): Promise<SignalScanRow | null> => {
         const chart = await getChart(entry.symbol, '1y');
+        // Sample candles keep charts usable offline, but synthetic data must
+        // never compete with live securities in a ranked market scanner.
+        if (chart.source !== 'live') return null;
         const candles = chart.candles;
         const latest = candles[candles.length - 1];
         if (!latest) return null;
@@ -216,9 +218,9 @@ export async function scanSignals(rawRequest?: unknown): Promise<SignalScanResul
     .filter((row) => row.signals.length > 0)
     .sort((a, b) => b.score - a.score || (b.changePercent ?? -Infinity) - (a.changePercent ?? -Infinity));
 
-  const source: DataSource = allRows.some((row) => row.source === 'live') ? 'live' : 'sample';
+  const source: SignalScanResult['source'] = allRows.length > 0 ? 'live' : 'unavailable';
   const summary = {
-    bullishPercent: allRows.length
+    signalBreadthPercent: allRows.length
       ? Math.round((rows.length / allRows.length) * 100)
       : 0,
     hotCount: rows.filter((row) => row.signals.some((s) => s.tone === 'hot')).length,
@@ -239,7 +241,9 @@ export async function scanSignals(rawRequest?: unknown): Promise<SignalScanResul
     generatedAt: new Date().toISOString(),
     universe: request.universe ?? 'us-stocks',
     totalUniverse: universe.length,
+    totalAttempted: selected.length,
     totalScanned: allRows.length,
+    unavailableCount: selected.length - allRows.length,
     rows,
     summary,
     source,

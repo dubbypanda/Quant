@@ -190,17 +190,17 @@ export function SignalBoard() {
   }, [query, result, signalFilter]);
 
   const activeCount = rows.length;
-  const coverageValue = result ? `${result.totalScanned}/${result.totalUniverse}` : loading ? '...' : '--';
+  const coverageValue = result ? `${result.totalScanned}/${result.totalAttempted}` : loading ? '...' : '--';
   const coverageDetail = result
-    ? `screened · ${result.source === 'sample' ? 'sample fallback' : 'live/cache'}`
-    : 'screening';
+    ? `${result.unavailableCount ? `${result.unavailableCount} unavailable · ` : ''}${result.totalUniverse} ${mode === 'watchlist' ? 'watchlist' : 'curated U.S.'} names`
+    : 'screening live data';
 
   return (
     <section className="sb-panel" aria-label="Signal board">
       <header className="sb-head">
         <div>
           <h2>Today&apos;s Signals</h2>
-          <p>Daily-candle technical scan for Buy/Short candidates, cup bases, moving-average alignment, highs, VCP, volume, and momentum.</p>
+          <p>Daily-candle technical scan over a curated U.S. universe or your watchlist. Only live market data is eligible for ranking.</p>
         </div>
         <div className="sb-head-actions">
           <span className="sb-asof">
@@ -219,7 +219,7 @@ export function SignalBoard() {
             className={mode === 'us-stocks' ? 'is-active' : ''}
             onClick={() => setMode('us-stocks')}
           >
-            US stocks
+            Curated U.S.
           </button>
           <button
             type="button"
@@ -249,7 +249,7 @@ export function SignalBoard() {
         <div className="qn-stagger" style={{ '--motion-index': 0 } as CSSProperties}><SummaryMeter label="Coverage" value={coverageValue} detail={coverageDetail} tone="neutral" /></div>
         <div className="qn-stagger" style={{ '--motion-index': 1 } as CSSProperties}><SummaryMeter label="Buy candidates" value={result ? String(result.summary.buyCandidateCount ?? 0) : '--'} detail={`${result?.summary.buyCandidateCount ?? 0} active long`} tone="up" /></div>
         <div className="qn-stagger" style={{ '--motion-index': 2 } as CSSProperties}><SummaryMeter label="Short candidates" value={result ? String(result.summary.shortCandidateCount ?? 0) : '--'} detail={`${result?.summary.shortCandidateCount ?? 0} active short`} tone="hot" /></div>
-        <div className="qn-stagger" style={{ '--motion-index': 3 } as CSSProperties}><SummaryMeter label="Signal breadth" value={result ? `${result.summary.bullishPercent}%` : '--'} detail={`${activeCount} visible`} tone="neutral" /></div>
+        <div className="qn-stagger" style={{ '--motion-index': 3 } as CSSProperties}><SummaryMeter label="Signal breadth" value={result ? `${result.summary.signalBreadthPercent}%` : '--'} detail={`${activeCount} visible`} tone="neutral" /></div>
         <div className="qn-stagger" style={{ '--motion-index': 4 } as CSSProperties}><SummaryMeter label="Near highs" value={result ? String(result.summary.nearHighCount) : '--'} detail="52W proximity" tone="up" /></div>
         <div className="qn-stagger" style={{ '--motion-index': 5 } as CSSProperties}><SummaryMeter label="MA order" value={result ? String(result.summary.maAlignedCount) : '--'} detail="bullish stacks" tone="neutral" /></div>
       </div>

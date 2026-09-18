@@ -542,6 +542,44 @@ console.log('--- Test 13: Forward outcome store recording and resolution ---');
   assert.equal(summary.resolvedSignals, 1);
   assert.equal(summary.targetHits, 1);
   assert.equal(summary.winRatePercent, 100);
+
+  const orderFilePath = path.join(tmp, 'test-forward-order.json');
+  const template = resolved[0];
+  const older = {
+    ...template,
+    id: 'older',
+    signalBarTime: 1000,
+    observedAt: '2026-01-01T00:00:00.000Z',
+    resolvedAt: '2026-01-05T00:00:00.000Z',
+  };
+  const newer = {
+    ...template,
+    id: 'newer',
+    signalBarTime: 3000,
+    observedAt: '2026-03-01T00:00:00.000Z',
+    resolvedAt: '2026-03-05T00:00:00.000Z',
+  };
+  signalOutcomeStore.writeAllOutcomeRecords([newer, older], orderFilePath);
+  const orderedSummary = signalOutcomeStore.getForwardSummary(
+    'NVDA', 'pullback-continuation', 'long', orderFilePath,
+  );
+  assert.equal(orderedSummary.firstSignalAt, older.observedAt);
+  assert.equal(orderedSummary.lastResolvedAt, newer.resolvedAt);
+
+  const pruneFilePath = path.join(tmp, 'test-forward-prune.json');
+  const many = Array.from({ length: 5005 }, (_, index) => ({
+    ...template,
+    id: `prune-${index + 1}`,
+    signalBarTime: index + 1,
+    observedAt: new Date((index + 1) * 86_400_000).toISOString(),
+    resolvedAt: new Date((index + 2) * 86_400_000).toISOString(),
+  }));
+  const scrambled = [...many.slice(2500), ...many.slice(0, 2500)];
+  signalOutcomeStore.writeAllOutcomeRecords(scrambled, pruneFilePath);
+  const pruned = signalOutcomeStore.readAllOutcomeRecords(pruneFilePath);
+  assert.equal(pruned.length, 5000);
+  assert.equal(pruned[0].signalBarTime, 6);
+  assert.equal(pruned[pruned.length - 1].signalBarTime, 5005);
 }
 
 console.log('--- Test 14: AI harness buildQuantEvidence V2 integration ---');
@@ -630,6 +668,56 @@ console.log('--- Test 14: AI harness buildQuantEvidence V2 integration ---');
   const forwardEvidence = evidence.find((e) => e.label.includes('Forward signal record (V2)'));
   assert.ok(forwardEvidence);
   assert.ok(forwardEvidence.value.includes('8 resolved trades'));
+}
+
+console.log('--- Test 15: Breakout structure excludes the bar being evaluated ---');
+{
+  const base = Array.from({ length: 30 }, (_, index) => {
+    const close = 96 + index * 0.05;
+    return {
+      time: 2_000_000 + index * 86_400,
+      open: close - 0.15,
+      high: Math.min(99.5, close + 0.8),
+      low: close - 0.8,
+      close,
+      volume: 1_000,
+    };
+  });
+  base[15] = { ...base[15], high: 100 };
+
+  const breakout = [...base, {
+    time: 2_000_000 + 30 * 86_400,
+    open: 99,
+    high: 104,
+    low: 98.5,
+    close: 103,
+    volume: 2_500,
+  }];
+  assert.equal(quant.swingHigh(breakout, 20, 1), 100);
+  assert.equal(quant.classifySetup(breakout, [], 'trending-up'), 'breakout');
+  assert.equal(quant.analyticsFor(breakout, []).resistance, null);
+
+  const failed = [
+    ...base.slice(0, 29),
+    {
+      time: 2_000_000 + 29 * 86_400,
+      open: 99,
+      high: 103,
+      low: 98.5,
+      close: 101,
+      volume: 1_800,
+    },
+    {
+      time: 2_000_000 + 30 * 86_400,
+      open: 101,
+      high: 101.5,
+      low: 97,
+      close: 98,
+      volume: 1_800,
+    },
+  ];
+  assert.equal(quant.swingHigh(failed, 20, 2), 100);
+  assert.equal(quant.classifySetup(failed, [], 'trending-up'), 'failed-breakout');
 }
 
 console.log('All Signal V2 unit tests passed successfully!');
