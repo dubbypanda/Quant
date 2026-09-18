@@ -19,6 +19,8 @@ All notable changes to Quant are documented here.
 
 ### Repository quality
 - Added `npm run verify` as the deterministic local baseline before packaging or release.
+- Stopped tracking generated `dist/` output and added it to `.gitignore`; local builds still regenerate it normally.
+- Moved Kronos implementation documents from the repository root into `docs/forecast/`.
 - Added regression coverage for breakout structure, forward-summary ordering, and forward-record pruning.
 - Public Quant remains the stable 2.x reference terminal; experimental QuantDesktop/3.0 work is intentionally excluded.
 
