@@ -53,7 +53,7 @@ export const LLM_PROVIDERS: LlmProviderDefinition[] = [
     label: 'Anthropic Claude',
     description: 'Claude through the native Messages API.',
     baseUrl: 'https://api.anthropic.com/v1',
-    model: 'claude-sonnet-4-6',
+    model: 'claude-sonnet-5',
     requiresApiKey: true,
   },
 ];

@@ -4,6 +4,9 @@ All notable changes to Quant are documented here.
 
 ## [2.2.0] - 2026-09-17
 
+### Provider defaults
+- Updated the default Claude model from `claude-sonnet-4-6` to `claude-sonnet-5`.
+
 ### Correctness
 - Fixed an unreachable breakout classification by deriving breakout levels exclusively from already-closed bars. A signal bar can no longer become its own resistance.
 - Fixed failed-breakout structure to compare the prior bar against a level known before that bar.

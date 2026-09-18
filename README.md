@@ -304,7 +304,7 @@ Available modes and providers:
 | OpenAI | `https://api.openai.com/v1` | `gpt-5.4-mini` | OpenAI API key |
 | Google Gemini | `https://generativelanguage.googleapis.com/v1beta/openai` | `gemini-3.5-flash` | Gemini API key |
 | xAI Grok | `https://api.x.ai/v1` | `grok-4.3` | xAI API key |
-| Anthropic Claude | `https://api.anthropic.com/v1` | `claude-sonnet-4-6` | Anthropic API key |
+| Anthropic Claude | `https://api.anthropic.com/v1` | `claude-sonnet-5` | Anthropic API key |
 
 ### Local llama.cpp
 
