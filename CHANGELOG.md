@@ -298,7 +298,7 @@ All notable changes to Quant are documented here.
 - Added editable provider endpoint and model settings plus a real connection test that verifies the selected endpoint, authentication, and model with a minimal completion.
 - Added OS-backed encrypted cloud API-key storage through Electron `safeStorage`; saved credentials are never returned to the renderer.
 - Reused the complete provider setup and connection-test interface in the first-run onboarding wizard.
-- Added a native Claude Messages adapter alongside the shared OpenAI-compatible adapter used by llama.cpp, OpenAI, Gemini, and Grok.
+- Added cloud-provider transport support alongside the shared OpenAI-compatible adapter used by llama.cpp, OpenAI, Gemini, and Grok.
 - Added an explicit three-month chart range.
 
 ### Fixed

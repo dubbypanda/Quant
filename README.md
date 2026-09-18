@@ -125,7 +125,7 @@ Click the preview to watch the 12-second demo:
 
 ### Introduced in v1.3.0
 
-- Dedicated Quant AI Settings tab with local llama.cpp, OpenAI, Gemini, Grok, and Claude provider profiles.
+- Dedicated Quant AI Settings tab with local llama.cpp, OpenAI, Gemini, and Grok provider profiles.
 - Real connection testing for endpoint, authentication, and model configuration.
 - OS-encrypted cloud API-key storage that never returns saved credentials to the renderer.
 - The full provider setup is also available during first-run onboarding.
@@ -408,7 +408,7 @@ Quant/
         holdings.ts           ETF holdings lookup
         insightStore.ts       Saved Quant AI insight records
         journalStore.ts       Transactional local Decision Journal persistence
-        llmProvider.ts        OpenAI-compatible and Claude request adapters
+        llmProvider.ts        OpenAI-compatible request adapter
         llmSettings.ts        Provider settings and encrypted credential persistence
         macro.ts              Jobs, unemployment, CPI, 10Y, oil, VIX overlays
         news.ts               Market news aggregation
