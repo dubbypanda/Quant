@@ -1,7 +1,7 @@
 {
   "name": "quant",
   "productName": "Quant",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "Desktop ETF & stock terminal — cross-asset market pulse, evidence-backed signals, news, earnings, and charts",
   "main": "dist/main/main.js",
   "license": "MIT",
@@ -17,6 +17,7 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "typecheck": "tsc --noEmit",
+    "verify": "npm run typecheck && npm run test:quant && npm run test:signal-v2 && npm run build",
     "test:quant": "node scripts/test-quant.mjs",
     "test:signal-v2": "node scripts/test-signal-v2.mjs",
     "test:forecast:smoke": "node scripts/test-forecast-fast-ui.mjs",

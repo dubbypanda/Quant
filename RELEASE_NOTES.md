@@ -1,5 +1,17 @@
 # Quant release notes
 
+## 2.2.0 — Correctness and Public Repository Hardening
+
+Quant v2.2.0 is a focused reliability release. It strengthens the public terminal's existing claims without importing the experimental QuantDesktop/3.0 feature set.
+
+### Highlights:
+- **Correct breakout structure:** Breakout and failed-breakout levels are derived from prior closed bars, eliminating self-referential resistance.
+- **Live-only scanner rankings:** Synthetic sample candles can keep charts usable offline but can no longer appear as ranked market candidates.
+- **Truthful universe scope:** The scanner is labeled **Curated U.S.** and reports attempted, successfully scanned, and unavailable coverage.
+- **Forward-record correctness:** Pruning keeps the newest resolved outcomes and summary timestamps remain chronological after pruning/reloads.
+- **Regression coverage:** Signal V2 explicitly tests breakout structure plus forward-record ordering/pruning invariants.
+- **One-command verification:** `npm run verify` runs the deterministic local typecheck, core tests, Signal V2 tests, and production build.
+
 ## 2.1.0 — Quant Signal Engine V2, Signal Board Candidate Filters, and New App Logo
 
 Quant v2.1.0 is a major engine release introducing **Quant Signal Engine V2**, dedicated **Signal Board candidate filtering**, and a new branding design.

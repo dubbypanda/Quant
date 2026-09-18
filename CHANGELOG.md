@@ -2,6 +2,26 @@
 
 All notable changes to Quant are documented here.
 
+## [2.2.0] - 2026-09-17
+
+### Correctness
+- Fixed an unreachable breakout classification by deriving breakout levels exclusively from already-closed bars. A signal bar can no longer become its own resistance.
+- Fixed failed-breakout structure to compare the prior bar against a level known before that bar.
+- Fixed forward-outcome pruning so the newest resolved records survive regardless of prior array ordering.
+- Fixed forward summary timestamps so first/last dates are derived chronologically rather than from array positions.
+- Added PNG/SVG TypeScript module declarations so renderer assets pass `tsc --noEmit`.
+- Removed an unused execution-simulator import.
+
+### Scanner integrity
+- Signal Board rankings are now live-data-only. Deterministic sample candles remain available for graceful chart fallback but are excluded from market rankings.
+- Renamed the default UI scope from “US stocks” to “Curated U.S.” so the product no longer implies exhaustive whole-market coverage.
+- Added attempted/scanned/unavailable coverage accounting and renamed the misleading internal `bullishPercent` metric to `signalBreadthPercent`.
+
+### Repository quality
+- Added `npm run verify` as the deterministic local baseline before packaging or release.
+- Added regression coverage for breakout structure, forward-summary ordering, and forward-record pruning.
+- Public Quant remains the stable 2.x reference terminal; experimental QuantDesktop/3.0 work is intentionally excluded.
+
 ## [2.1.0] - 2026-08-19
 
 ### Added
